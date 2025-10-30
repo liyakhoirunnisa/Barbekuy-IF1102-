@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('kategori', 50)->nullable();
             $table->string('nama_produk');
             $table->integer('harga');
-            $table->integer('harga_sewa')->nullable();
             $table->text('deskripsi')->nullable();
             $table->string('gambar')->nullable();
             $table->integer('stok')->default(0);

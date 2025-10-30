@@ -93,7 +93,6 @@
 .btn-primary-custom:focus,
 .btn-primary-custom:active,
 .btn-primary-custom:focus-visible{
-  box-shadow:none !important;
   outline:none !important;
   color:#fff !important;       /* tetap putih saat klik/fokus */
 }
@@ -118,11 +117,7 @@
 
 /* === Tombol hapus custom (warna maroon Barbekuy) === */
 .btn-delete-custom {
-  border: 1px solid #751A25;
   color: #751A25;
-  background-color: transparent;
-  border-radius: 8px;
-  transition: background-color 0.2s, color 0.2s;
 }
 
 .btn-delete-custom i {
@@ -130,10 +125,6 @@
   line-height: 1;
 }
 
-.btn-delete-custom:hover ,
-.btn-delete-custom:focus {
-  color: #fff;
-}
     @media (max-width: 768px) {
       .item-keranjang { flex-direction: column; align-items: flex-start; }
       .harga-item { text-align: left; margin-top: 10px; }
@@ -188,9 +179,9 @@
 
         {{-- tombol hapus massal: hanya muncul saat ada item terpilih --}}
         <button id="bulkDeleteBtn" type="button"
-                class="btn btn-delete-custom px-4 py-2 d-inline-flex align-items-center gap-2"
+                class="btn btn-delete-custom px-1 py-1 d-inline-flex align-items-center"
                 style="display:none;">
-          <i class="bi bi-trash" style="font-size:1.15rem;"></i>
+          <i class="bi bi-trash" style="font-size:2rem;"></i>
         </button>
 
         <a href="#" id="checkoutBtn" class="btn btn-primary-custom px-4 py-2">Checkout</a>
@@ -305,9 +296,10 @@
   const debouncedTypeUpdate = debounce(async (item, id, jumlah) => {
     try {
       const data = await updateQtyOnServer(id, jumlah);
-      if (data.berhasil) {
+      if (data.success) {
         item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
         updateTotalSelected();
+        window.dispatchEvent(new Event('cart:updated'));
       } else {
         alert(data.pesan || 'Gagal memperbarui jumlah.');
       }
@@ -334,9 +326,10 @@
       qtyInput.value = next;
       try {
         const data = await updateQtyOnServer(id, next);
-        if (data.berhasil) {
+        if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
+          window.dispatchEvent(new Event('cart:updated'));
         } else {
           alert(data.pesan || 'Gagal memperbarui jumlah.');
         }
@@ -352,9 +345,10 @@
       qtyInput.value = next;
       try {
         const data = await updateQtyOnServer(id, next);
-        if (data.berhasil) {
+        if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
+          window.dispatchEvent(new Event('cart:updated'));
         } else {
           alert(data.pesan || 'Gagal memperbarui jumlah.');
         }
@@ -380,7 +374,7 @@
       qtyInput.value = val;
       try {
         const data = await updateQtyOnServer(id, val);
-        if (data.berhasil) {
+        if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
         }
@@ -408,7 +402,7 @@
       });
       const data = await res.json();
 
-      if (data.berhasil) {
+      if (data.success) {
         if (status) { status.textContent = 'Tersimpan'; }
         setTimeout(() => { if (status) status.style.display = 'none'; }, 900);
       } else {
@@ -473,7 +467,7 @@
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
           });
           const data = await res.json();
-          if (data.success || data.berhasil) {
+          if (data.success || data.success) {
             item.remove();
             return true;
           }
@@ -481,6 +475,7 @@
         return false;
       }));
 
+      window.dispatchEvent(new Event('cart:updated'));
       updateTotalSelected();
 
       const sukses = hasil.filter(Boolean).length;
@@ -489,7 +484,7 @@
       if (gagal > 0) {
         showToast(`${gagal} item gagal dihapus.`, 'danger');
       } else {
-        showToast(`${sukses} item berhasil dihapus.`, 'success');
+        showToast(`${sukses} item success dihapus.`, 'success');
       }
     });
   }

@@ -16,6 +16,13 @@ class KeranjangController extends Controller
         return view('keranjang', compact('keranjang'));
     }
 
+    public function count()
+    {
+        $keranjang = session()->get('keranjang', []);
+        $total = count($keranjang);
+        return response()->json(['count' => $total]);
+    }
+
     // ➕ Tambah produk ke keranjang
     public function tambah(Request $request, $id)
     {
@@ -44,62 +51,44 @@ class KeranjangController extends Controller
         ]);
     }
 
-
-
     // ✏️ Ubah jumlah atau tanggal sewa produk — dipanggil tombol +/− & Simpan
     public function ubah(Request $request, $id)
     {
-        // Pastikan bisa parsing JSON body
         $data = $request->json()->all() ?: $request->all();
 
-        $produk    = Produk::where('id_produk', $id)->firstOrFail();
+        $produk = \App\Models\Produk::where('id_produk', $id)->firstOrFail();
         $keranjang = session()->get('keranjang', []);
 
-        $foundIndex = null;
-        foreach ($keranjang as $i => $item) {
-            if ((int)$item['produk_id'] === (int)$id) { 
-                $foundIndex = $i; 
-                break; 
-            }
+        if (!isset($keranjang[$id])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan di keranjang.',
+            ]);
         }
 
-        if ($foundIndex === null) {
-            $keranjang[] = [
-                'produk_id'       => (int)$id,
-                'jumlah'          => 1,
-                'tanggal_mulai'   => Carbon::now()->toDateString(),
-                'tanggal_selesai' => Carbon::now()->toDateString(),
-            ];
-            $foundIndex = array_key_last($keranjang);
-        }
-
-        // 🔧 ambil dari $data, bukan langsung $request
+        // Update jumlah (pastikan minimal 1)
         if (isset($data['jumlah'])) {
-            $keranjang[$foundIndex]['jumlah'] = max(1, (int)$data['jumlah']);
+            $keranjang[$id]['jumlah'] = max(1, (int)$data['jumlah']);
         }
 
+        // Update tanggal kalau dikirim
         if (!empty($data['tanggal_mulai'])) {
-            $keranjang[$foundIndex]['tanggal_mulai'] = $data['tanggal_mulai'];
+            $keranjang[$id]['tanggal_mulai'] = $data['tanggal_mulai'];
         }
-
         if (!empty($data['tanggal_selesai'])) {
-            $keranjang[$foundIndex]['tanggal_selesai'] = $data['tanggal_selesai'];
+            $keranjang[$id]['tanggal_selesai'] = $data['tanggal_selesai'];
         }
 
         session()->put('keranjang', $keranjang);
 
-        $jumlah   = (int)$keranjang[$foundIndex]['jumlah'];
-        $subtotal = (int)$produk->harga * $jumlah;
+        $subtotal = (int)$produk->harga * (int)$keranjang[$id]['jumlah'];
 
         return response()->json([
-            'berhasil' => true,
-            'subtotal' => $subtotal,
-            'jumlah'   => $jumlah,
-            'item'     => $keranjang[$foundIndex],
+            'success' => true,
+            'subtotal' => number_format($subtotal, 0, ',', '.'),
+            'jumlah' => $keranjang[$id]['jumlah'],
         ]);
     }
-
-
 
     // ❌ Hapus produk dari keranjang
     public function hapus($id)

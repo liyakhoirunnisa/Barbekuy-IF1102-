@@ -302,6 +302,8 @@
 
 
  <script>
+   const IS_LOGGED_IN = {{ auth()->check() ? 'true' : 'false' }};
+  const LOGIN_URL = '{{ route('login') }}';
   let currentProdukId = '';
   let currentProdukNama = '';
 
@@ -320,11 +322,17 @@
 
   document.querySelectorAll('.ikon-keranjang, .btn-tanggal').forEach(btn => {
     btn.addEventListener('click', function () {
+      if (!IS_LOGGED_IN) {
+        // arahkan ke page login
+        window.location = LOGIN_URL;
+        return;
+      }
       const idProduk = this.getAttribute('data-produk');
       const namaProduk = this.closest('article').querySelector('h5').innerText;
       bukaModalTanggal(idProduk, namaProduk);
     });
   });
+
 
   // 🗓️ Fungsi format tanggal dari yyyy-mm-dd → dd-mm-yyyy
   function formatTanggal(tanggal) {
@@ -373,34 +381,54 @@
   }
 
   function tambahKeKeranjang(idProduk, mulaiRaw, selesaiRaw, jumlah) {
-  const mulaiIndo = formatTanggal(mulaiRaw);
-  const selesaiIndo = formatTanggal(selesaiRaw);
+    const mulaiIndo = formatTanggal(mulaiRaw);
+    const selesaiIndo = formatTanggal(selesaiRaw);
 
-  fetch(`/keranjang/tambah/${idProduk}`, {   // ← tambahkan idProduk di URL
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    },
-    body: JSON.stringify({
-      tanggal_mulai: mulaiRaw,
-      tanggal_selesai: selesaiRaw,
-      jumlah: jumlah
+    fetch(`/keranjang/tambah/${idProduk}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',              // minta JSON -> bisa dapat 401 dari Laravel
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      credentials: 'same-origin'                   // bawa cookie sesi
+      ,
+      body: JSON.stringify({
+        tanggal_mulai: mulaiRaw,
+        tanggal_selesai: selesaiRaw,
+        jumlah: jumlah
+      })
     })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
+    .then(async (res) => {
+      // Jika server redirect (belum login), bawa user ke halaman login
+      if (res.redirected) {
+        window.location = res.url;
+        return;
+      }
+
+      // Jika 401/419 (unauthenticated/CSRF), arahkan ke login
+      if (res.status === 401 || res.status === 419) {
+        window.location = LOGIN_URL;
+        return;
+      }
+
+      const text = await res.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch (_) { /* bukan JSON */ }
+
+      if (!res.ok || data.success !== true) {
+        throw new Error(data.message || 'Gagal menambahkan ke keranjang.');
+      }
+
+      // sukses
       bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
       new bootstrap.Modal(document.getElementById('successModal')).show();
       document.getElementById('successText').innerText =
         `Sewa dari ${mulaiIndo} sampai ${selesaiIndo} (${jumlah} unit) berhasil ditambahkan ke keranjang.`;
-    } else {
-      alert(data.message || 'Gagal menambahkan ke keranjang.');
-    }
-  })
-  .catch(() => alert('Terjadi kesalahan saat menambahkan ke keranjang.'));
-}
+    })
+    .catch(() => alert('Terjadi kesalahan saat menambahkan ke keranjang.'));
+  }
+
 
 </script>
 

@@ -50,6 +50,17 @@ Route::controller(AuthController::class)->group(function () {
 | 🧑‍💼 Area Customer
 |--------------------------------------------------------------------------
 */
+Route::middleware(['auth'])->get('/keranjang/count', function () {
+    $keranjang = session('keranjang', []);
+    $count = 0;
+    if (is_array($keranjang)) {
+        foreach ($keranjang as $row) {
+            $count += (int)($row['jumlah'] ?? 1); // jumlah total item
+        }
+    }
+    return response()->json(['count' => $count]);
+})->name('keranjang.count');
+
 Route::get('/', function () {
     return view('beranda'); // Beranda publik
 })->name('beranda');
