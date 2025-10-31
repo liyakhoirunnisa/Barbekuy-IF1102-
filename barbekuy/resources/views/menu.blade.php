@@ -422,17 +422,13 @@
 
       // sukses
       bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
+      window.addEventListener('cart:updated', refreshCartCount);
       new bootstrap.Modal(document.getElementById('successModal')).show();
       document.getElementById('successText').innerText =
         `Sewa dari ${mulaiIndo} sampai ${selesaiIndo} (${jumlah} unit) berhasil ditambahkan ke keranjang.`;
     })
     .catch(() => alert('Terjadi kesalahan saat menambahkan ke keranjang.'));
   }
-
-
 </script>
-
-
-
 </body>
 </html>

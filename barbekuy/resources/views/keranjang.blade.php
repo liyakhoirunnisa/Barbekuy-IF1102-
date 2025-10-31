@@ -240,17 +240,18 @@
     let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), delay); };
   }
 
-  async function updateQtyOnServer(id, jumlah){
+  async function updateQtyOnServer(id, jumlah, tanggalMulai, tanggalSelesai) {
     const res = await fetch(`/keranjang/ubah/${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}'
       },
-      body: JSON.stringify({ jumlah })
+      body: JSON.stringify({ jumlah, tanggal_mulai: tanggalMulai, tanggal_selesai: tanggalSelesai })
     });
     return res.json();
   }
+
 
  function updateTotalSelected() {
   let total = 0;
@@ -294,19 +295,21 @@
 
   // ===== Qty (+ / −) dan ketik manual =====
   const debouncedTypeUpdate = debounce(async (item, id, jumlah) => {
+    const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
+    const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
     try {
-      const data = await updateQtyOnServer(id, jumlah);
-      if (data.success) {
-        item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
-        updateTotalSelected();
-        window.dispatchEvent(new Event('cart:updated'));
-      } else {
-        alert(data.pesan || 'Gagal memperbarui jumlah.');
+      const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalSelesai);
+        if (data.success) {
+          item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
+          updateTotalSelected();
+          window.dispatchEvent(new Event('cart:updated'));
+        } else {
+          alert(data.pesan || 'Gagal memperbarui jumlah.');
+        }
+      } catch {
+        // Biarkan silent; user bisa coba lagi
       }
-    } catch {
-      // Biarkan silent; user bisa coba lagi
-    }
-  }, 450);
+    }, 450);
 
   document.querySelectorAll('.item-keranjang').forEach(item => {
     const id        = item.dataset.id;
@@ -324,8 +327,10 @@
     btnPlus.addEventListener('click', async () => {
       const next = clampQty(qtyInput.value) + 1;
       qtyInput.value = next;
+      const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
+      const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
       try {
-        const data = await updateQtyOnServer(id, next);
+        const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalSelesai);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -343,8 +348,10 @@
       const next = Math.max(1, clampQty(qtyInput.value) - 1);
       if (next === clampQty(qtyInput.value)) return; // tidak berubah
       qtyInput.value = next;
+      const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
+      const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
       try {
-        const data = await updateQtyOnServer(id, next);
+        const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalSelesai);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -370,10 +377,14 @@
 
     // Saat blur, pastikan minimal 1 dan sinkron server
     qtyInput.addEventListener('blur', async () => {
-      const val = clampQty(qtyInput.value);
-      qtyInput.value = val;
+      const jumlah = clampQty(qtyInput.value);
+      qtyInput.value = jumlah;
+
+      const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
+      const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
+
       try {
-        const data = await updateQtyOnServer(id, val);
+        const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalSelesai);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -467,7 +478,7 @@
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
           });
           const data = await res.json();
-          if (data.success || data.success) {
+          if (data.success) {
             item.remove();
             return true;
           }
@@ -488,9 +499,6 @@
       }
     });
   }
-
-
-
   // Init awal
   updateTotalSelected();
 </script>
