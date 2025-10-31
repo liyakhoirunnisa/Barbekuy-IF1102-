@@ -136,10 +136,14 @@
   @include('layouts.navbar')
 
   <section class="cart-container container">
-    @forelse ($keranjang as $id => $barang)
-    @php $produk = \App\Models\Produk::where('id_produk', $barang['produk_id'])->first(); @endphp
-      <div class="item-keranjang" data-id="{{ $barang['produk_id'] }}">
-        <input type="checkbox" class="checkbox">
+    @forelse ($keranjang as $key => $barang)
+      @php
+        $produk = \App\Models\Produk::where('id_produk', $barang['produk_id'])->first();
+      @endphp
+      <div class="item-keranjang"
+          data-id="{{ $barang['produk_id'] }}"
+          data-key="{{ $key }}">
+        <input type="checkbox" class="checkbox" value="{{ $key }}">
         <img src="{{ asset('storage/' . $produk->gambar) }}" alt="{{ $produk->nama_produk }}">
         <div class="detail-item">
           <div class="nama-produk">{{ $produk->nama_produk }}</div>
@@ -150,7 +154,7 @@
                   value="{{ $barang['tanggal_mulai'] }}" name="tanggal_mulai">
             <span>–</span>
             <input type="date" class="form-control form-control-sm d-inline-block w-auto"
-                  value="{{ $barang['tanggal_selesai'] }}" name="tanggal_selesai">
+                  value="{{ $barang['tanggal_pengembalian'] }}" name="tanggal_pengembalian">
 
             <!-- 👇 indikator status simpan -->
             <small class="status-simpan ms-2 text-muted" style="display:none;">Menyimpan…</small>
@@ -240,14 +244,14 @@
     let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), delay); };
   }
 
-  async function updateQtyOnServer(id, jumlah, tanggalMulai, tanggalSelesai) {
+  async function updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian) {
     const res = await fetch(`/keranjang/ubah/${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}'
       },
-      body: JSON.stringify({ jumlah, tanggal_mulai: tanggalMulai, tanggal_selesai: tanggalSelesai })
+      body: JSON.stringify({ jumlah, tanggal_mulai: tanggalMulai, tanggal_pengembalian: tanggalPengembalian })
     });
     return res.json();
   }
@@ -286,8 +290,6 @@
   }
 }
 
-
-
   // ===== Checkbox listener =====
   document.querySelectorAll('.checkbox').forEach(cb => {
     cb.addEventListener('change', updateTotalSelected);
@@ -296,9 +298,9 @@
   // ===== Qty (+ / −) dan ketik manual =====
   const debouncedTypeUpdate = debounce(async (item, id, jumlah) => {
     const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
-    const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
+    const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
     try {
-      const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalSelesai);
+      const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -328,9 +330,9 @@
       const next = clampQty(qtyInput.value) + 1;
       qtyInput.value = next;
       const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
-      const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
+      const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
       try {
-        const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalSelesai);
+        const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -349,9 +351,9 @@
       if (next === clampQty(qtyInput.value)) return; // tidak berubah
       qtyInput.value = next;
       const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
-      const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
+      const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
       try {
-        const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalSelesai);
+        const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -381,10 +383,10 @@
       qtyInput.value = jumlah;
 
       const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
-      const tanggalSelesai = item.querySelector('input[name="tanggal_selesai"]').value;
+      const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
 
       try {
-        const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalSelesai);
+        const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian);
         if (data.success) {
           item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
           updateTotalSelected();
@@ -397,7 +399,7 @@
   async function saveDatesForItem(itemEl) {
     const id = itemEl.dataset.id;
     const tanggalMulai   = itemEl.querySelector('input[name="tanggal_mulai"]').value;
-    const tanggalSelesai = itemEl.querySelector('input[name="tanggal_selesai"]').value;
+    const tanggalPengembalian = itemEl.querySelector('input[name="tanggal_pengembalian"]').value;
     const status = itemEl.querySelector('.status-simpan');
 
     if (status) { status.style.display = 'inline'; status.textContent = 'Menyimpan…'; }
@@ -409,7 +411,7 @@
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({ tanggal_mulai: tanggalMulai, tanggal_selesai: tanggalSelesai })
+        body: JSON.stringify({ tanggal_mulai: tanggalMulai, tanggal_pengembalian: tanggalPengembalian })
       });
       const data = await res.json();
 
@@ -432,7 +434,7 @@
   }, 600);
 
   document.querySelectorAll('.item-keranjang').forEach(item => {
-    item.querySelectorAll('input[name="tanggal_mulai"], input[name="tanggal_selesai"]').forEach(inp => {
+    item.querySelectorAll('input[name="tanggal_mulai"], input[name="tanggal_pengembalian"]').forEach(inp => {
       inp.addEventListener('input',  debouncedSaveDates);
       inp.addEventListener('change', debouncedSaveDates);
     });
@@ -469,34 +471,66 @@
     confirmBtn.addEventListener('click', async () => {
       bsModal.hide();
 
-      const hasil = await Promise.all(selectedItems.map(async cb => {
-        const item = cb.closest('.item-keranjang');
-        const id   = item.dataset.id;
-        try {
-          const res  = await fetch(`/keranjang/hapus/${id}`, {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-          });
-          const data = await res.json();
-          if (data.success) {
-            item.remove();
-            return true;
-          }
-        } catch {}
-        return false;
-      }));
+      const keys = selectedItems
+        .map(cb => cb.value || cb.closest('.item-keranjang')?.dataset.key)
+        .filter(Boolean);
 
-      window.dispatchEvent(new Event('cart:updated'));
-      updateTotalSelected();
+      if (keys.length === 0) return;
 
-      const sukses = hasil.filter(Boolean).length;
-      const gagal  = hasil.length - sukses;
+      const res = await fetch(`/keranjang/hapus-banyak`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ keys })
+      });
 
-      if (gagal > 0) {
-        showToast(`${gagal} item gagal dihapus.`, 'danger');
-      } else {
-        showToast(`${sukses} item success dihapus.`, 'success');
+      let data = {};
+      try { data = await res.json(); } catch {}
+
+      // Jika gagal, cukup diam (tanpa alert). Boleh console.error untuk debug dev.
+      if (!res.ok || !data?.success) {
+        console.error('Gagal menghapus item terpilih.', data);
+        return;
       }
+
+      // Hapus elemen DOM yang berhasil dihapus (tanpa notif)
+      const removed = Array.isArray(data.removed_keys) ? data.removed_keys : keys;
+      removed.forEach(k => {
+        const el = document.querySelector(`.item-keranjang[data-key="${CSS.escape(k)}"]`);
+        if (el) el.remove();
+      });
+
+      // Jika keranjang kosong setelah penghapusan → tampilkan pesan kosong & sembunyikan total
+      if (document.querySelectorAll('.item-keranjang').length === 0) {
+        const container = document.querySelector('.cart-container');
+
+        // Hindari duplikasi pesan
+        if (!document.getElementById('emptyCartMsg')) {
+          const emptyMsg = document.createElement('p');
+          emptyMsg.id = 'emptyCartMsg';
+          emptyMsg.className = 'text-center text-muted mt-5';
+          emptyMsg.textContent = 'Keranjang Anda masih kosong 🛒';
+          container.appendChild(emptyMsg);
+        }
+
+        const totalSection = document.getElementById('totalSection');
+        if (totalSection) totalSection.style.display = 'none';
+      }
+
+      // Update badge cart bila backend mengembalikan count
+      if (typeof data.count === 'number') {
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+          badge.textContent = data.count;
+          badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+        }
+      }
+
+      // Bersihkan seleksi & hitung ulang total + state tombol
+      selectedItems = [];
+      updateTotalSelected();
     });
   }
   // Init awal

@@ -44,8 +44,8 @@ class KeranjangController extends Controller
 
         // buat key unik berdasarkan produk + tanggal sewa
         $tanggalMulai   = $request->input('tanggal_mulai', now()->toDateString());
-        $tanggalSelesai = $request->input('tanggal_selesai', now()->toDateString());
-        $key = $id . '_' . $tanggalMulai . '_' . $tanggalSelesai;
+        $tanggalPengembalian = $request->input('tanggal_pengembalian', now()->toDateString());
+        $key = $id . '_' . $tanggalMulai . '_' . $tanggalPengembalian;
 
         // jika sudah ada entri yang sama persis (produk + tanggal), tambahkan jumlah
         if (isset($keranjang[$key])) {
@@ -55,7 +55,7 @@ class KeranjangController extends Controller
             $keranjang[$key] = [
                 'produk_id'       => $produk->id_produk,
                 'tanggal_mulai'   => $tanggalMulai,
-                'tanggal_selesai' => $tanggalSelesai,
+                'tanggal_pengembalian' => $tanggalPengembalian,
                 'jumlah'          => (int)$request->input('jumlah', 1),
                 'added_at'        => now()->timestamp, // untuk urutan terbaru
             ];
@@ -77,8 +77,8 @@ class KeranjangController extends Controller
     {
         $data = $request->json()->all() ?: $request->all();
         $tanggalMulai   = $data['tanggal_mulai'] ?? now()->toDateString();
-        $tanggalSelesai = $data['tanggal_selesai'] ?? now()->toDateString();
-        $key = $id . '_' . $tanggalMulai . '_' . $tanggalSelesai;
+        $tanggalPengembalian = $data['tanggal_pengembalian'] ?? now()->toDateString();
+        $key = $id . '_' . $tanggalMulai . '_' . $tanggalPengembalian;
 
         $keranjang = session()->get('keranjang', []);
 
@@ -106,27 +106,54 @@ class KeranjangController extends Controller
         ]);
     }
 
-    // ❌ Hapus produk dari keranjang
-    public function hapus($id)
+    // ❌ Hapus produk (BY KEY, bukan by produk_id)
+    public function hapusByKey($key)
     {
         $keranjang = session()->get('keranjang', []);
-
-        foreach ($keranjang as $k => $item) {
-            if ((int)($item['produk_id'] ?? 0) === (int)$id) {
-                unset($keranjang[$k]); // jaga key asosiatif tetap konsisten
-            }
+        if (isset($keranjang[$key])) {
+            unset($keranjang[$key]);
+            session()->put('keranjang', $keranjang);
         }
 
-        session()->put('keranjang', $keranjang);
-
-        // hitung ulang total
+        // hitung ulang total badge
         $total = 0;
         foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
 
         return response()->json([
             'success' => true,
             'message' => 'Produk dihapus dari keranjang.',
-            'count'   => $total, // opsional, biar badge langsung update
+            'count'   => $total,
+            'removed_keys' => [$key],
+        ]);
+    }
+
+    // ❌❌ Hapus banyak produk (selected) by keys
+    public function hapusBanyak(Request $request)
+    {
+        $keys = $request->input('keys', []); // array of composite keys
+        if (!is_array($keys)) $keys = [];
+
+        $keranjang = session()->get('keranjang', []);
+
+        $removed = [];
+        foreach ($keys as $k) {
+            if (isset($keranjang[$k])) {
+                unset($keranjang[$k]);
+                $removed[] = $k;
+            }
+        }
+
+        session()->put('keranjang', $keranjang);
+
+        // hitung ulang total badge
+        $total = 0;
+        foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Produk terpilih dihapus dari keranjang.',
+            'count'   => $total,
+            'removed_keys' => $removed,
         ]);
     }
 }

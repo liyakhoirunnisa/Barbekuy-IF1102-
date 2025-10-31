@@ -260,8 +260,8 @@
           </div>
 
           <div class="w-75">
-            <label class="form-label fw-semibold">Tanggal Selesai</label>
-            <input type="date" id="tanggalSelesai" class="form-control">
+            <label class="form-label fw-semibold">Tanggal Pengembalian</label>
+            <input type="date" id="tanggalPengembalian" class="form-control">
           </div>
 
           <div class="w-75">
@@ -314,7 +314,7 @@
     document.getElementById('selectedItem').innerText = namaProduk;
     document.getElementById('stokInfo').innerHTML = '';
     document.getElementById('tanggalMulaiSewa').value = '';
-    document.getElementById('tanggalSelesai').value = '';
+    document.getElementById('tanggalPengembalian').value = '';
     document.getElementById('jumlahSewa').value = 1;
 
     new bootstrap.Modal(document.getElementById('calendarModal')).show();
@@ -343,22 +343,22 @@
 
   function cekStok() {
     const mulaiRaw = document.getElementById('tanggalMulaiSewa').value;
-    const selesaiRaw = document.getElementById('tanggalSelesai').value;
+    const pengembalianRaw = document.getElementById('tanggalPengembalian').value;
     const jumlah = document.getElementById('jumlahSewa').value;
     const info = document.getElementById('stokInfo');
 
-    if (!mulaiRaw || !selesaiRaw) {
+    if (!mulaiRaw || !pengembalianRaw) {
       info.innerHTML = `<div class="text-danger fw-semibold">Pilih kedua tanggal terlebih dahulu.</div>`;
       return;
     }
-    if (new Date(selesaiRaw) < new Date(mulaiRaw)) {
-      info.innerHTML = `<div class="text-danger fw-semibold">Tanggal selesai tidak boleh sebelum tanggal sewa.</div>`;
+    if (new Date(pengembalianRaw) < new Date(mulaiRaw)) {
+      info.innerHTML = `<div class="text-danger fw-semibold">Tanggal pengembalian tidak boleh sebelum tanggal sewa.</div>`;
       return;
     }
 
     // Format ke dd-mm-yyyy untuk ditampilkan
     const mulai = formatTanggal(mulaiRaw);
-    const selesai = formatTanggal(selesaiRaw);
+    const pengembalian = formatTanggal(pengembalianRaw);
 
     // Simulasi stok tersedia
     const tersedia = Math.random() > 0.2;
@@ -366,23 +366,23 @@
     if (tersedia) {
       info.innerHTML = `
         <div class="alert alert-success py-2">
-          Stok tersedia untuk <strong>${mulai}</strong> s/d <strong>${selesai}</strong> (${jumlah} unit)
+          Stok tersedia untuk <strong>${mulai}</strong> s/d <strong>${pengembalian}</strong> (${jumlah} unit)
         </div>
         <button class="btn mt-2" style="background-color:#751A25; color:white;"
-          onclick="tambahKeKeranjang('${currentProdukId}', '${mulaiRaw}', '${selesaiRaw}', '${jumlah}')">
+          onclick="tambahKeKeranjang('${currentProdukId}', '${mulaiRaw}', '${pengembalianRaw}', '${jumlah}')">
           Tambah ke Keranjang
         </button>`;
     } else {
       info.innerHTML = `
         <div class="alert alert-danger py-2">
-          Maaf, stok habis untuk tanggal <strong>${mulai}</strong> - <strong>${selesai}</strong> 😢
+          Maaf, stok habis untuk tanggal <strong>${mulai}</strong> - <strong>${pengembalian}</strong> 😢
         </div>`;
     }
   }
 
- function tambahKeKeranjang(idProduk, mulaiRaw, selesaiRaw, jumlah) {
+ function tambahKeKeranjang(idProduk, mulaiRaw, pengembalianRaw, jumlah) {
     const mulaiIndo = formatTanggal(mulaiRaw);
-    const selesaiIndo = formatTanggal(selesaiRaw);
+    const pengembalianIndo = formatTanggal(pengembalianRaw);
 
     fetch(`/keranjang/tambah/${idProduk}`, {
       method: 'POST',
@@ -394,7 +394,7 @@
       credentials: 'same-origin',
       body: JSON.stringify({
         tanggal_mulai: mulaiRaw,
-        tanggal_selesai: selesaiRaw,
+        tanggal_pengembalian: pengembalianRaw,
         jumlah: jumlah
       })
     })
@@ -415,7 +415,7 @@
       bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
       new bootstrap.Modal(document.getElementById('successModal')).show();
       document.getElementById('successText').innerText =
-        `Sewa dari ${mulaiIndo} sampai ${selesaiIndo} (${jumlah} unit) berhasil ditambahkan ke keranjang.`;
+        `Sewa dari ${mulaiIndo} sampai ${pengembalianIndo} (${jumlah} unit) berhasil ditambahkan ke keranjang.`;
 
       // 🔄 update badge langsung
       if (data.count != null) {
