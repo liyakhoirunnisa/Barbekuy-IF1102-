@@ -380,7 +380,7 @@
     }
   }
 
-  function tambahKeKeranjang(idProduk, mulaiRaw, selesaiRaw, jumlah) {
+ function tambahKeKeranjang(idProduk, mulaiRaw, selesaiRaw, jumlah) {
     const mulaiIndo = formatTanggal(mulaiRaw);
     const selesaiIndo = formatTanggal(selesaiRaw);
 
@@ -388,11 +388,10 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',              // minta JSON -> bisa dapat 401 dari Laravel
+        'Accept': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}'
       },
-      credentials: 'same-origin'                   // bawa cookie sesi
-      ,
+      credentials: 'same-origin',
       body: JSON.stringify({
         tanggal_mulai: mulaiRaw,
         tanggal_selesai: selesaiRaw,
@@ -400,32 +399,33 @@
       })
     })
     .then(async (res) => {
-      // Jika server redirect (belum login), bawa user ke halaman login
-      if (res.redirected) {
-        window.location = res.url;
-        return;
-      }
-
-      // Jika 401/419 (unauthenticated/CSRF), arahkan ke login
-      if (res.status === 401 || res.status === 419) {
-        window.location = LOGIN_URL;
-        return;
-      }
+      // Redirect (belum login)
+      if (res.redirected) { window.location = res.url; return; }
+      if (res.status === 401 || res.status === 419) { window.location = LOGIN_URL; return; }
 
       const text = await res.text();
       let data = {};
-      try { data = JSON.parse(text); } catch (_) { /* bukan JSON */ }
+      try { data = JSON.parse(text); } catch (_) {}
 
       if (!res.ok || data.success !== true) {
         throw new Error(data.message || 'Gagal menambahkan ke keranjang.');
       }
 
-      // sukses
+      // ✅ sukses
       bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
-      window.addEventListener('cart:updated', refreshCartCount);
       new bootstrap.Modal(document.getElementById('successModal')).show();
       document.getElementById('successText').innerText =
         `Sewa dari ${mulaiIndo} sampai ${selesaiIndo} (${jumlah} unit) berhasil ditambahkan ke keranjang.`;
+
+      // 🔄 update badge langsung
+      if (data.count != null) {
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+          badge.textContent = data.count;
+          // tampilkan/sembunyikan sesuai count
+          badge.style.display = Number(data.count) > 0 ? 'inline-block' : 'none';
+        }
+      }
     })
     .catch(() => alert('Terjadi kesalahan saat menambahkan ke keranjang.'));
   }

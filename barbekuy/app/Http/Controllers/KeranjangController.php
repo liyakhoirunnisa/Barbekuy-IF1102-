@@ -16,9 +16,8 @@ class KeranjangController extends Controller
 
         // 🧭 Urutkan berdasarkan waktu terbaru (created_at)
         uasort($keranjang, function ($a, $b) {
-            return strtotime($b['created_at'] ?? 'now') <=> strtotime($a['created_at'] ?? 'now');
+            return ($b['added_at'] ?? 0) <=> ($a['added_at'] ?? 0);
         });
-
         return view('keranjang', compact('keranjang'));
     }
 
@@ -29,7 +28,10 @@ class KeranjangController extends Controller
         foreach ($keranjang as $item) {
             $total += (int)($item['jumlah'] ?? 1);
         }
-        return response()->json(['count' => $total]);
+        return response()->json([
+            'success' => true,
+            'count'   => $total,
+        ]);
     }
 
     // ➕ Tambah produk ke keranjang
@@ -60,10 +62,13 @@ class KeranjangController extends Controller
         }
 
         session()->put('keranjang', $keranjang);
+        $total = 0;
+        foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Produk berhasil ditambahkan ke keranjang.',
+        'success' => true,
+        'message' => 'Produk berhasil ditambahkan ke keranjang.',
+        'count'   => $total, // <— penting untuk update badge
         ]);
     }
 
@@ -106,13 +111,22 @@ class KeranjangController extends Controller
     {
         $keranjang = session()->get('keranjang', []);
 
-        $baru = array_values(array_filter($keranjang, fn($item) => (int)$item['produk_id'] !== (int)$id));
+        foreach ($keranjang as $k => $item) {
+            if ((int)($item['produk_id'] ?? 0) === (int)$id) {
+                unset($keranjang[$k]); // jaga key asosiatif tetap konsisten
+            }
+        }
 
-        session()->put('keranjang', $baru);
+        session()->put('keranjang', $keranjang);
+
+        // hitung ulang total
+        $total = 0;
+        foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
 
         return response()->json([
-            'success' => true,              // konsisten dengan frontend
-            'message'    => 'Produk dihapus dari keranjang.',
+            'success' => true,
+            'message' => 'Produk dihapus dari keranjang.',
+            'count'   => $total, // opsional, biar badge langsung update
         ]);
     }
 }

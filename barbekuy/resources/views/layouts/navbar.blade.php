@@ -170,10 +170,11 @@
       <ul class="navbar-nav align-items-center actions">
         {{-- 🧺 Keranjang --}}
         <li class="nav-item position-relative">
-          <a href="{{ route('keranjang.index') }}" class="nav-keranjang" title="Keranjang">
-            <i class="bi bi-cart3"></i>
-            {{-- sembunyikan di server jika 0 --}}
-            <span class="badge-cart" @if(($cartCount ?? 0) <= 0) style="display:none" @endif>
+          <a href="{{ route('keranjang.index') }}" class="nav-keranjang position-relative" title="Keranjang">
+            <i class="bi bi-cart3 fs-5"></i>
+            <span id="cart-badge"
+                  class="badge-cart position-absolute top-0 start-100 translate-middle rounded-pill bg-danger"
+                  @if(($cartCount ?? 0) <= 0) style="display:none" @endif>
               {{ $cartCount ?? 0 }}
             </span>
           </a>
