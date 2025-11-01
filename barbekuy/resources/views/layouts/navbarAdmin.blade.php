@@ -158,9 +158,6 @@
     <a href="{{ route('admin.pembayaran') }}" class="menu-item {{ request()->routeIs('admin.pembayaran') ? 'active' : '' }}">
       <i class="fa-solid fa-credit-card"></i> Pembayaran
     </a>
-    <a href="{{ route('admin.pesan') }}" class="menu-item {{ request()->routeIs('admin.pesan') ? 'active' : '' }}">
-      <i class="fa-solid fa-comments"></i> Pesan
-    </a>
     <a href="{{ route('admin.pengaturan') }}" class="menu-item {{ request()->routeIs('admin.pengaturan') ? 'active' : '' }}">
       <i class="fa-solid fa-gear"></i> Pengaturan
     </a>

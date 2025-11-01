@@ -3,11 +3,13 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PemesananController;
+
 // ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
 use App\Http\Controllers\PengaturanController as AdminPengaturanController;
 use App\Http\Controllers\PengaturanUserController;
@@ -17,7 +19,6 @@ use App\Http\Controllers\PengaturanUserController;
 | 🔄 Redirect Dasar
 |--------------------------------------------------------------------------
 */
-
 Route::get('/', function () {
     if (auth()->check()) {
         return auth()->user()->role === 'admin'
@@ -34,7 +35,6 @@ Route::get('/', function () {
 */
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLoginForm')->name('login');
-
     Route::post('/login', 'login')->name('login.process');
 
     Route::get('/daftar', 'showRegisterForm')->name('daftar.form');
@@ -44,50 +44,62 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/daftar-admin', 'showRegisterForm')->name('admin.daftar.form');
     Route::post('/daftar-admin', 'registerAdmin')->name('admin.daftar');
 
-    // routes/web.php
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    // ✅ logout cukup refer ke method 'logout' di controller ini
+    Route::post('/logout', 'logout')->name('logout');
 });
+
+/*
+|--------------------------------------------------------------------------
+| 🌐 Halaman Umum
+|--------------------------------------------------------------------------
+*/
+// ✅ Beranda publik dipindah ke /beranda agar tidak bentrok dengan '/'
+Route::get('/beranda', function () {
+    return view('beranda');
+})->name('beranda');
+
+Route::get('/menu', [ProdukController::class, 'index'])->name('menu');
 
 /*
 |--------------------------------------------------------------------------
 | 🧑‍💼 Area Customer
 |--------------------------------------------------------------------------
 */
+// 🔢 Badge jumlah keranjang (AJAX)
 Route::middleware(['auth'])->get('/keranjang/count', function () {
     $keranjang = session('keranjang', []);
     $count = 0;
     if (is_array($keranjang)) {
         foreach ($keranjang as $row) {
-            $count += (int)($row['jumlah'] ?? 1); // jumlah total item
+            $count += (int)($row['jumlah'] ?? 1);
         }
     }
     return response()->json(['count' => $count]);
 })->name('keranjang.count');
 
-Route::get('/', function () {
-    return view('beranda'); // Beranda publik
-})->name('beranda');
-
-Route::get('/menu', [ProdukController::class, 'index'])->name('menu');
-
+// 🛒 Keranjang (Controller) – setelah login user
 Route::middleware(['auth', 'role:user'])->group(function () {
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
+    Route::post('/keranjang/tambah/{id}', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
+    Route::post('/keranjang/ubah/{id}', [KeranjangController::class, 'ubah'])->name('keranjang.ubah');
+    Route::post('/keranjang/hapus-banyak', [KeranjangController::class, 'hapusBanyak'])->name('keranjang.hapusBanyak');
+    Route::delete('/keranjang/hapus/{key}', [KeranjangController::class, 'hapusByKey'])->name('keranjang.hapusByKey');
 
-    Route::get('/pemesanan', fn() => view('pemesanan'))->name('pemesanan');
-    Route::post('/pemesanan', [PemesananController::class, 'store'])->name('pemesanan.store');
-    Route::get('/pemesanan/{id}', [PemesananController::class, 'show'])->name('pemesanan.show');
+    // ✅ Riwayat Pesanan — dipakai navbar: route('riwayat.semua')
+    Route::get('/riwayat', [PemesananController::class, 'riwayat'])->name('riwayat.semua');
 
-    Route::view('/riwayat/semua', 'riwayat.semua')->name('riwayat.semua');
-    Route::view('/riwayat/proses', 'riwayat.proses')->name('riwayat.proses');
-    Route::view('/riwayat/siap', 'riwayat.siap')->name('riwayat.siap');
-    Route::view('/riwayat/sewa', 'riwayat.sewa')->name('riwayat.sewa');
-    Route::view('/riwayat/selesai', 'riwayat.selesai')->name('riwayat.selesai');
-    Route::view('/riwayat/batal', 'riwayat.batal')->name('riwayat.batal');
+    // ♻️ Alias lama (kalau ada view lama pakai 'pemesanan.riwayat')
+    Route::get('/riwayat/pesanan', function () {
+        return redirect()->route('riwayat.semua');
+    })->name('pemesanan.riwayat');
+});
 
-    // 💬 Chat dummy
+// 💬 Chat (dummy, simpan di session) – auth + role:user
+Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/chat', function (Request $request) {
         $messages = $request->session()->get('chat_messages', []);
         return view('chat', [
-            'messages' => $messages,
+            'messages'     => $messages,
             'customerName' => auth()->user()->name,
         ]);
     })->name('chat.index');
@@ -115,13 +127,6 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         $request->session()->forget('chat_messages');
         return redirect()->route('chat.index')->with('status', 'Chat telah direset.');
     })->name('chat.reset');
-
-    // 🛒 Keranjang (pakai Controller)
-    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
-    Route::post('/keranjang/tambah/{id}', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
-    Route::post('/keranjang/ubah/{id}', [KeranjangController::class, 'ubah'])->name('keranjang.ubah');
-    Route::post('/keranjang/hapus-banyak', [KeranjangController::class, 'hapusBanyak'])->name('keranjang.hapusBanyak');
-    Route::delete('/keranjang/hapus/{key}', [KeranjangController::class, 'hapusByKey'])->name('keranjang.hapusByKey');
 });
 
 /*
@@ -129,7 +134,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 | ⚙️ Settings USER (siapa pun yang login)
 |--------------------------------------------------------------------------
 */
-// ✅ Tampilkan halaman Pengaturan (GET)
+// ✅ Halaman pengaturan (GET) – cocok dengan route('pengaturan') di navbar
 Route::middleware(['auth'])->get('/pengaturan', function () {
     return view('pengaturan'); // resources/views/pengaturan.blade.php
 })->name('pengaturan');
@@ -159,16 +164,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::view('/transaksi', 'admin.transaksi')->name('admin.transaksi');
     Route::view('/pembayaran', 'admin.pembayaran')->name('admin.pembayaran');
     Route::view('/pesan', 'admin.pesan')->name('admin.pesan');
-    // Halaman view pengaturan admin (tetap /admin/pengaturan)
+
+    // Halaman view pengaturan admin
     Route::view('/pengaturan', 'admin.pengaturan')->name('admin.pengaturan');
 
-    // ⚙️ SETTINGS ADMIN → menghasilkan nama route: admin.settings.profile.update, dll.
+    // ⚙️ SETTINGS ADMIN → admin.settings.*
     Route::prefix('settings')->as('admin.settings.')->group(function () {
-        // Gunakan POST agar cocok dengan form sederhana (tanpa spoof PUT).
         Route::post('/profile',  [AdminPengaturanController::class, 'updateProfile'])->name('profile.update');
         Route::post('/password', [AdminPengaturanController::class, 'updatePassword'])->name('password.update');
         Route::post('/notif',    [AdminPengaturanController::class, 'updateNotif'])->name('notif.update');
-        Route::post('/verify',   [AdminPengaturanController::class, 'verify'])->name('verify');
+
+        // (Opsional) kalau view admin kamu butuh verifikasi
+        // Route::post('/verify',   [AdminPengaturanController::class, 'verify'])->name('verify');
     });
 });
 
