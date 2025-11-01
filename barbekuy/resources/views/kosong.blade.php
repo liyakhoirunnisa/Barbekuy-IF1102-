@@ -1,132 +1,197 @@
-@php
-  $__cart = session('keranjang', []);
-  $cartCount = 0;
-  if (is_array($__cart)) {
-    foreach ($__cart as $row) { $cartCount += (int)($row['jumlah'] ?? 1); }
-  }
-@endphp
+web.php
 
-<style>
-  /* (pindahkan ke CSS global kalau sudah ada) */
-  *{ font-family:'Poppins',sans-serif; }
-  nav.navbar{ background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-  .navbar-brand img{ width:130px; }
-  .nav-link{ color:#800000 !important; font-weight:500; transition:.3s; margin-right:10px; }
-  .nav-link:hover{ color:#a00000 !important; }
-  .btn-login{ background:#800000; color:#fff !important; border-radius:8px; padding:6px 18px; transition:.3s; }
-  .btn-login:hover{ background:#a00000; }
-  .search-box{ display:flex; align-items:center; background:#fff; border-radius:12px; padding:8px 14px;
-               box-shadow:0 0 5px rgba(128,0,0,.08); border:1px solid rgba(128,0,0,.1); width:400px; transition:.3s; margin:0 20px; }
-  .search-box:hover{ box-shadow:0 0 15px rgba(128,0,0,.15); }
-  .search-box i{ color:#000; font-size:1rem; margin-right:10px; }
-  .search-box input{ border:none; outline:none; width:100%; font-size:.95rem; color:#000; }
-  .search-box input::placeholder{ color:#000; opacity:.7; }
-  .nav-keranjang{ color:#751A25; font-size:1.35rem; transition:.3s; margin-left:10px; position:relative; }
-  .nav-keranjang:hover{ color:#9c2833; }
-  .badge-cart{ position:absolute; top:-4px; right:-8px; background:#d32f2f; color:#fff; font-size:10px; font-weight:600;
-               padding:2px 5px; border-radius:50%; line-height:1; min-width:18px; text-align:center; box-shadow:0 0 3px rgba(0,0,0,.2); }
-  @media (max-width: 992px){ .search-box{ width:100%; margin:10px 0; } .nav-link{ margin:10px 0; } }
-</style>
+<?php
 
-<nav class="navbar navbar-expand-lg navbar-light sticky-top">
-  <div class="container">
-    {{-- Logo --}}
-    <a class="navbar-brand d-flex align-items-center" href="{{ route('beranda') }}">
-      <img src="{{ asset('images/logo.png') }}" alt="Barbekuy Logo" class="me-2" style="height:36px;width:auto;">
-    </a>
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
 
-    {{-- Search (desktop) --}}
-    <form class="d-none d-lg-block" action="{{ url('/search') }}" method="GET">
-      <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border" style="width: 400px;">
-        <i class="bi bi-search me-2 text-dark"></i>
-        <input type="text" name="q" placeholder="Cari..." class="border-0 outline-none w-100" style="font-size:.95rem;color:#000;">
-      </div>
-    </form>
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BerandaController;
+use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\PemesananController;
 
-    {{-- Toggler --}}
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+// ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
+use App\Http\Controllers\PengaturanController as AdminPengaturanController;
+use App\Http\Controllers\PengaturanUserController;
 
-    {{-- Menu kanan --}}
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-      <ul class="navbar-nav align-items-center">
-        <li class="nav-item"><a class="nav-link" href="{{ route('beranda') }}">Beranda</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url('/#tentang') }}">Tentang Kami</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ route('menu') }}">Menu</a></li>
-        <li class="nav-item"><a class="nav-link" href="#kontak">Kontak</a></li>
-      </ul>
+/*
+|--------------------------------------------------------------------------
+| 🔄 Redirect Dasar
+|--------------------------------------------------------------------------
+| Jika sudah login: arahkan sesuai role. Jika belum: ke login.
+*/
+Route::get('/', function () {
+    if (auth()->check()) {
+        return auth()->user()->role === 'admin'
+            ? redirect()->route('admin.beranda')
+            : redirect()->route('beranda');
+    }
+    return redirect()->route('login');
+});
 
-      <ul class="navbar-nav align-items-center actions">
-        {{-- Keranjang --}}
-        <li class="nav-item position-relative">
-          <a href="{{ route('keranjang.index') }}" class="nav-keranjang" title="Keranjang">
-            <i class="bi bi-cart3"></i>
-            {{-- sembunyikan di server jika 0 --}}
-            <span class="badge-cart" @if(($cartCount ?? 0) <= 0) style="display:none" @endif>
-              {{ $cartCount ?? 0 }}
-            </span>
-          </a>
-        </li>
+/*
+|--------------------------------------------------------------------------
+| 🔐 Autentikasi (AuthController)
+|--------------------------------------------------------------------------
+*/
+Route::controller(AuthController::class)->group(function () {
+    Route::get('/login', 'showLoginForm')->name('login');
+    Route::post('/login', 'login')->name('login.process');
 
-        {{-- Profil / Login --}}
-        @auth
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu"
-              role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profil">
-              <i class="bi bi-person-circle" style="font-size:1.4rem; color:#751A25;"></i>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileMenu">
-              <li>
-                <form method="POST" action="{{ route('logout') }}">
-                  @csrf
-                  <button type="submit" class="dropdown-item">
-                    <i class="bi bi-box-arrow-right me-2"></i> Keluar
-                  </button>
-                </form>
-              </li>
-            </ul>
-          </li>
-        @else
-          <li class="nav-item ms-lg-3">
-            <a href="{{ route('login') }}" class="btn btn-login text-white">Masuk</a>
-          </li>
-        @endauth
-      </ul>
+    Route::get('/daftar', 'showRegisterForm')->name('daftar.form');
+    Route::post('/daftar', 'register')->name('daftar.process');
 
-      {{-- Search (mobile) --}}
-      <form class="d-lg-none mt-3 w-100" action="{{ url('/search') }}" method="GET">
-        <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border">
-          <i class="bi bi-search me-2 text-dark"></i>
-          <input type="text" name="q" placeholder="Cari..." class="border-0 outline-none w-100" style="font-size:.95rem;color:#000%;">
-        </div>
-      </form>
-    </div>
-  </div>
-</nav>
+    // 🧑‍💻 (Opsional) Register Admin
+    Route::get('/daftar-admin', 'showRegisterForm')->name('admin.daftar.form');
+    Route::post('/daftar-admin', 'registerAdmin')->name('admin.daftar');
 
-@auth
-<script>
-(function () {
-  const badge = document.querySelector('.badge-cart');
-  if (!badge) return;
+    Route::post('/logout', 'logout')->name('logout');
+});
 
-  async function refreshCartCount() {
-    try {
-      const res = await fetch('{{ route('keranjang.count') }}', {
-        headers: { 'Accept': 'application/json' },
-        credentials: 'same-origin'
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const n = parseInt(data.count || 0, 10) || 0;
-      badge.textContent = n;
-      badge.style.display = n > 0 ? 'inline-block' : 'none';
-    } catch (_) { /* no-op */ }
-  }
+/*
+|--------------------------------------------------------------------------
+| 🧑‍💼 Area Customer (Publik & User)
+|--------------------------------------------------------------------------
+*/
 
-  // Perbarui ketika halaman lain menambah/menghapus item
-  window.addEventListener('cart:updated', refreshCartCount);
-})();
-</script>
-@endauth
+// ✅ Beranda publik di /beranda
+Route::get('/beranda', function () {
+    return view('beranda');
+})->name('beranda');
+
+Route::get('/menu', [ProdukController::class, 'index'])->name('menu');
+
+// Hanya user login dengan role:user
+Route::middleware(['auth', 'role:user'])->group(function () {
+
+    // 🧾 Pemesanan
+    Route::get('/pemesanan', fn () => view('pemesanan'))->name('pemesanan');
+    Route::post('/pemesanan', [PemesananController::class, 'store'])->name('pemesanan.store');
+    Route::get('/pemesanan/{id}', [PemesananController::class, 'show'])->name('pemesanan.show');
+
+    // 🗂️ Riwayat
+    Route::view('/riwayat/semua', 'riwayat.semua')->name('riwayat.semua');
+    Route::view('/riwayat/proses', 'riwayat.proses')->name('riwayat.proses');
+    Route::view('/riwayat/siap', 'riwayat.siap')->name('riwayat.siap');
+    Route::view('/riwayat/sewa', 'riwayat.sewa')->name('riwayat.sewa');
+    Route::view('/riwayat/selesai', 'riwayat.selesai')->name('riwayat.selesai');
+    Route::view('/riwayat/batal', 'riwayat.batal')->name('riwayat.batal');
+
+    // 💬 Chat dummy (session)
+    Route::get('/chat', function (Request $request) {
+        $messages = $request->session()->get('chat_messages', []);
+        return view('chat', [
+            'messages' => $messages,
+            // pakai first_name/last_name kalau ada:
+            // 'customerName' => trim((auth()->user()->first_name ?? '').' '.(auth()->user()->last_name ?? '')),
+            'customerName' => auth()->user()->name,
+        ]);
+    })->name('chat.index');
+
+    Route::post('/chat/send', function (Request $request) {
+        $data = $request->validate(['body' => 'required|string|max:5000']);
+
+        $messages = $request->session()->get('chat_messages', []);
+        $messages[] = [
+            'sender' => 'customer',
+            'time'   => now()->format('H:i'),
+            'body'   => $data['body'],
+        ];
+        $messages[] = [
+            'sender' => 'admin',
+            'time'   => now()->format('H:i'),
+            'body'   => 'Baik kak, pesanan akan kami proses ya 🙏',
+        ];
+
+        $request->session()->put('chat_messages', $messages);
+        return redirect()->route('chat.index');
+    })->name('chat.send');
+
+    Route::get('/chat/reset', function (Request $request) {
+        $request->session()->forget('chat_messages');
+        return redirect()->route('chat.index')->with('status', 'Chat telah direset.');
+    })->name('chat.reset');
+
+    // 🛒 Keranjang
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
+    Route::post('/keranjang/tambah/{id}', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
+    Route::post('/keranjang/ubah/{id}', [KeranjangController::class, 'ubah'])->name('keranjang.ubah');
+    Route::delete('/keranjang/hapus/{id}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
+});
+
+/*
+|--------------------------------------------------------------------------
+| ⚙️ Settings USER (siapa pun yang login)
+|--------------------------------------------------------------------------
+*/
+// ✅ Tampilkan halaman Pengaturan (GET) → untuk tombol di navbar
+Route::middleware(['auth'])->get('/pengaturan', function () {
+    return view('pengaturan'); // resources/views/pengaturan.blade.php
+})->name('pengaturan');
+
+// ✅ Aksi simpan (POST) → ke PengaturanUserController
+Route::middleware(['auth'])->group(function () {
+    Route::post('/pengaturan/profile', [PengaturanUserController::class, 'updateProfile'])->name('pengaturan.profile.update');
+    Route::post('/pengaturan/password', [PengaturanUserController::class, 'updatePassword'])->name('pengaturan.password.update');
+    Route::post('/pengaturan/notif',   [PengaturanUserController::class, 'updateNotif'])->name('pengaturan.notif.update');
+    Route::post('/pengaturan/verify',  [PengaturanUserController::class, 'verify'])->name('pengaturan.verify');
+});
+
+/*
+|--------------------------------------------------------------------------
+| 🧑‍💻 Area Admin
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    Route::get('/beranda', [BerandaController::class, 'admin'])->name('beranda');
+
+    Route::get('/produk', [ProdukController::class, 'adminIndex'])->name('produk');
+    Route::post('/produk/tambah', [ProdukController::class, 'store'])->name('produk.store');
+    Route::post('/produk/update/{id}', [ProdukController::class, 'update'])->name('produk.update');
+    Route::delete('/produk/delete/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
+
+    Route::view('/notifikasi', 'admin.notifikasi')->name('notifikasi');
+    Route::view('/transaksi', 'admin.transaksi')->name('transaksi');
+    Route::view('/pembayaran', 'admin.pembayaran')->name('pembayaran');
+    Route::view('/pesan', 'admin.pesan')->name('pesan');
+    Route::view('/pengaturan', 'admin.pengaturan')->name('pengaturan');
+
+    // ⚙️ Settings ADMIN (pakai controller admin lama yang kamu punya)
+    Route::post('/pengaturan/profile',  [AdminPengaturanController::class, 'updateProfile'])->name('pengaturan.profile.update');
+    Route::post('/pengaturan/password', [AdminPengaturanController::class, 'updatePassword'])->name('pengaturan.password.update');
+    Route::post('/pengaturan/notif',    [AdminPengaturanController::class, 'updateNotif'])->name('pengaturan.notif.update');
+    Route::post('/pengaturan/verify',   [AdminPengaturanController::class, 'verify'])->name('pengaturan.verify');
+});
+
+/*
+|--------------------------------------------------------------------------
+| ⭐ Halaman Ulasan (Terbuka)
+|--------------------------------------------------------------------------
+*/
+Route::get('/ulasan', function () {
+    $reviews = [
+        (object)[
+            'user_name'    => 'Theresa Jordan',
+            'review_text'  => 'Pas banget buat BBQ kecil-kecilan bareng temen! Dagingnya fresh, bumbunya lengkap, dan porsinya pas.',
+            'product_name' => 'Paket Slice Ber-4 Xtra',
+            'rating'       => 5,
+        ],
+        (object)[
+            'user_name'    => 'Daniel Smith',
+            'review_text'  => 'Pelayanannya cepat dan ramah, cocok buat acara keluarga.',
+            'product_name' => 'Paket Premium Grill',
+            'rating'       => 5,
+        ],
+        (object)[
+            'user_name'    => 'Alicia Tan',
+            'review_text'  => 'Daging segar tapi sausnya agak kurang banyak. Tetap mantap!',
+            'product_name' => 'Paket Slice Duo',
+            'rating'       => 4,
+        ],
+    ];
+
+    return view('ulasan', compact('reviews'));
+})->name('ulasan.index');

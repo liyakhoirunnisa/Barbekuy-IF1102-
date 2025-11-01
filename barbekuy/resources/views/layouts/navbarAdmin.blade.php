@@ -1,122 +1,145 @@
-{{-- resources/views/layouts/navbarAdmin.blade.php --}}
-
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
-  body { background:#f5f6fa; display:flex; min-height:100vh; }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  body {
+    background: #f5f6fa;
+    display: flex;
+    min-height: 100vh;
+  }
 
   /* === SIDEBAR === */
   .sidebar {
-    width:240px;
-    background:#751A25;
-    color:#fff;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding-top:20px;
-    flex-shrink:0;
+    width: 240px;
+    background: #751A25;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    flex-shrink: 0;
   }
+
   .logo {
-    height:110px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#751A25;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #751A25;
   }
+
   .logo img {
-    width:190px;
-    height:auto;
-    object-fit:contain;
-    position:relative;
-    top:-18px;
+    width: 190px;
+    height: auto;
+    object-fit: contain;
+    position: relative;
+    top: -18px;
   }
+
   .menu {
-    width:100%;
-    margin-top:-3px;
+    width: 100%;
+    margin-top: -3px;
   }
+
   .menu-item {
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:14px 26px;
-    color:#fff;
-    font-size:14px;
-    text-decoration:none;
-    transition:0.3s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 26px;
+    color: #fff;
+    font-size: 14px;
+    text-decoration: none;
+    transition: 0.3s;
   }
+
   .menu-item i {
-    font-size:18px;
-    width:20px;
-    text-align:center;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
   }
+
   .menu-item:hover,
   .menu-item.active {
-    background:rgba(255,255,255,0.15);
-    border-radius:10px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
   }
 
   /* === TOPBAR === */
   .main-content {
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    overflow:hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
   }
+
   .topbar {
-    height:90px;
-    background:#751A25;
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    padding:0 40px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
-    gap:25px;
+    height: 90px;
+    background: #751A25;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    gap: 25px;
   }
+
   .topbar a {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    height:55px;
-    position:relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 55px;
+    position: relative;
   }
+
   .topbar a i {
-    font-size:22px;
-    color:#fff;
-    cursor:pointer;
-    transition:0.3s;
+    font-size: 22px;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.3s;
   }
-  .topbar a i:hover { transform:scale(1.1); }
+
+  .topbar a i:hover {
+    transform: scale(1.1);
+  }
+
   .badge {
-    position:absolute;
-    top:5px;
-    right:8px;
-    background:red;
-    color:#fff;
-    font-size:11px;
-    padding:2px 6px;
-    border-radius:50%;
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    background: red;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 50%;
   }
+
   .profile {
-    height:55px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:#fff;
-    color:#751A25;
-    padding:6px 14px;
-    border-radius:30px;
-    font-weight:500;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    color: #751A25;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-weight: 500;
   }
+
   .avatar {
-    background:#751A25;
-    color:#fff;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:600;
+    background: #751A25;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
   }
 </style>
 
@@ -145,7 +168,7 @@
 </aside>
 
 <main class="main-content">
-  <div class="topbar">  
+  <div class="topbar">
     <a href="{{ route('admin.notifikasi') }}">
       <i class="fa-solid fa-bell"></i>
       <span class="badge">2</span>

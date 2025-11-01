@@ -66,9 +66,9 @@ class KeranjangController extends Controller
         foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
 
         return response()->json([
-        'success' => true,
-        'message' => 'Produk berhasil ditambahkan ke keranjang.',
-        'count'   => $total, // <— penting untuk update badge
+            'success' => true,
+            'message' => 'Produk berhasil ditambahkan ke keranjang.',
+            'count'   => $total, // <— penting untuk update badge
         ]);
     }
 

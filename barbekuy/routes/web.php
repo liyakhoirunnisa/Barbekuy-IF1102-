@@ -8,12 +8,16 @@ use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PemesananController;
+// ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
+use App\Http\Controllers\PengaturanController as AdminPengaturanController;
+use App\Http\Controllers\PengaturanUserController;
 
 /*
 |--------------------------------------------------------------------------
 | 🔄 Redirect Dasar
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
     if (auth()->check()) {
         return auth()->user()->role === 'admin'
@@ -42,7 +46,6 @@ Route::controller(AuthController::class)->group(function () {
 
     // routes/web.php
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
 });
 
 /*
@@ -123,6 +126,24 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| ⚙️ Settings USER (siapa pun yang login)
+|--------------------------------------------------------------------------
+*/
+// ✅ Tampilkan halaman Pengaturan (GET)
+Route::middleware(['auth'])->get('/pengaturan', function () {
+    return view('pengaturan'); // resources/views/pengaturan.blade.php
+})->name('pengaturan');
+
+// ✅ Aksi simpan (POST)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/pengaturan/profile', [PengaturanUserController::class, 'updateProfile'])->name('pengaturan.profile.update');
+    Route::post('/pengaturan/password', [PengaturanUserController::class, 'updatePassword'])->name('pengaturan.password.update');
+    Route::post('/pengaturan/notif',   [PengaturanUserController::class, 'updateNotif'])->name('pengaturan.notif.update');
+    Route::post('/pengaturan/verify',  [PengaturanUserController::class, 'verify'])->name('pengaturan.verify');
+});
+
+/*
+|--------------------------------------------------------------------------
 | 🧑‍💻 Area Admin
 |--------------------------------------------------------------------------
 */
@@ -138,7 +159,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::view('/transaksi', 'admin.transaksi')->name('admin.transaksi');
     Route::view('/pembayaran', 'admin.pembayaran')->name('admin.pembayaran');
     Route::view('/pesan', 'admin.pesan')->name('admin.pesan');
+    // Halaman view pengaturan admin (tetap /admin/pengaturan)
     Route::view('/pengaturan', 'admin.pengaturan')->name('admin.pengaturan');
+
+    // ⚙️ SETTINGS ADMIN → menghasilkan nama route: admin.settings.profile.update, dll.
+    Route::prefix('settings')->as('admin.settings.')->group(function () {
+        // Gunakan POST agar cocok dengan form sederhana (tanpa spoof PUT).
+        Route::post('/profile',  [AdminPengaturanController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/password', [AdminPengaturanController::class, 'updatePassword'])->name('password.update');
+        Route::post('/notif',    [AdminPengaturanController::class, 'updateNotif'])->name('notif.update');
+        Route::post('/verify',   [AdminPengaturanController::class, 'verify'])->name('verify');
+    });
 });
 
 /*

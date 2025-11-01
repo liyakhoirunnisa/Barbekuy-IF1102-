@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,8 @@
 
         /* === Hero Section === */
         .hero {
-            background-color: #751A25; /* 🔥 ganti dari gambar ke warna solid */
+            background-color: #751A25;
+            /* 🔥 ganti dari gambar ke warna solid */
             color: white;
             text-align: center;
             padding: 140px 20px;
@@ -75,17 +77,21 @@
 
         .menu-card img {
             border-radius: 12px 12px 0 0;
-            weight: 260px
-            height: 260px; /* 🔥 lebih tinggi dari sebelumnya */
+            weight: 260px height: 260px;
+            /* 🔥 lebih tinggi dari sebelumnya */
             object-fit: cover;
-            object-position: center top; /* fokus ke bagian atas gambar */
+            object-position: center top;
+            /* fokus ke bagian atas gambar */
             transition: transform 0.3s ease;
         }
 
         .menu-card .card-text.harga {
-            font-size: 1.2rem; /* 🔥 lebih besar dari default */
-            font-weight: 600;  /* biar terlihat tegas */
-            color: #751A25;    /* merah tua sesuai tema Barbekuy */
+            font-size: 1.2rem;
+            /* 🔥 lebih besar dari default */
+            font-weight: 600;
+            /* biar terlihat tegas */
+            color: #751A25;
+            /* merah tua sesuai tema Barbekuy */
             margin-top: 8px;
         }
 
@@ -165,9 +171,9 @@
         .btn-lihat-lebih:hover .arrow {
             transform: translateX(6px);
         }
-
     </style>
 </head>
+
 <body>
 
     {{-- Navbar --}}
@@ -189,17 +195,17 @@
                 <h2 class="mb-4" style="color: #000000; font-weight: 600;">Tentang Kami</h2>
                 <p style="color: #333; font-size: 1.05rem; text-align: justify;">
                     Di <strong>Barbekuy</strong>, kami percaya bahwa momen terbaik tercipta di sekitar panggangan yang menyala,
-                    aroma daging yang menggoda, dan tawa hangat bersama orang-orang terdekat.  
-                    Kami hadir untuk memudahkan kamu menikmati serunya acara BBQ tanpa harus pusing menyiapkan perlengkapannya.  
-                    Cukup sewa alat dan bahan grill dari kami — mulai dari panggangan, arang, bumbu, hingga daging segar siap bakar.  
-                    Semuanya praktis, higienis, dan siap pakai!  
+                    aroma daging yang menggoda, dan tawa hangat bersama orang-orang terdekat.
+                    Kami hadir untuk memudahkan kamu menikmati serunya acara BBQ tanpa harus pusing menyiapkan perlengkapannya.
+                    Cukup sewa alat dan bahan grill dari kami — mulai dari panggangan, arang, bumbu, hingga daging segar siap bakar.
+                    Semuanya praktis, higienis, dan siap pakai!
                     Dengan Barbekuy, kamu bisa fokus menikmati momen kebersamaan, sementara urusan perlengkapan kami yang tangani.
                 </p>
             </div>
 
             <!-- Kolom kanan: gambar -->
             <div class="col-md-6 text-center">
-                <img src="{{ asset('images/loginpage.png') }}" 
+                <img src="{{ asset('images/loginpage.png') }}"
                     alt="Tentang Barbekuy"
                     class="img-fluid rounded-4 shadow-lg"
                     style="width: 100%; max-width: 500px; max-height: 400px; object-fit: cover; object-position: 50% 30%;">
@@ -395,15 +401,15 @@
                 <div class="col-md-4 text-md-start">
                     <h6 class="fw-bold mb-2">Kontak Kami</h6>
                     <p class="mb-0">
-                        <a href="https://maps.app.goo.gl/2JV4KyWNrhMcZGN6A?g_st=aw" 
-                        target="_blank" 
-                        class="text-white text-decoration-none">
+                        <a href="https://maps.app.goo.gl/2JV4KyWNrhMcZGN6A?g_st=aw"
+                            target="_blank"
+                            class="text-white text-decoration-none">
                             Sumampir Kulon, Sumampir, Purwokerto Utara, Banyumas Regency, Central Java 53125
                         </a><br>
                         <!-- Link ke WhatsApp -->
-                        <a href="https://wa.me/6287746567500" 
-                        target="_blank" 
-                        class="text-white text-decoration-none d-flex align-items-center mt-1">
+                        <a href="https://wa.me/6287746567500"
+                            target="_blank"
+                            class="text-white text-decoration-none d-flex align-items-center mt-1">
                             <i class="bi bi-whatsapp me-2"></i>
                             <span>+6287746567500</span>
                         </a>
@@ -418,8 +424,8 @@
             <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
                 <!-- Instagram -->
                 <div class="mb-2 mb-md-0">
-                    <a href="https://instagram.com/barbekuy.purwokerto" target="_blank" 
-                    class="text-white text-decoration-none d-flex align-items-center">
+                    <a href="https://instagram.com/barbekuy.purwokerto" target="_blank"
+                        class="text-white text-decoration-none d-flex align-items-center">
                         <i class="bi bi-instagram me-2" style="font-size: 1.2rem;"></i>
                         <span>@barbekuy.purwokerto</span>
                     </a>
@@ -440,4 +446,5 @@
     {{-- Bootstrap JS --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
