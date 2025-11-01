@@ -146,6 +146,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pengaturan/notif',   [PengaturanUserController::class, 'updateNotif'])->name('pengaturan.notif.update');
     Route::post('/pengaturan/verify',  [PengaturanUserController::class, 'verify'])->name('pengaturan.verify');
 });
+Route::post('/produk/{id}/stok-tersedia', [\App\Http\Controllers\ProdukController::class, 'cekStok'])
+    ->name('produk.cekStok');
 
 /*
 |--------------------------------------------------------------------------

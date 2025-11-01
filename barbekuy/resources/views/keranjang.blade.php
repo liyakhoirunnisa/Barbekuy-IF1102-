@@ -252,10 +252,22 @@
     @forelse ($keranjang as $key => $barang)
     @php
     $produk = \App\Models\Produk::where('id_produk', $barang['produk_id'])->first();
+
+    $mulai = $barang['tanggal_mulai'] ?? null;
+    $akhir = $barang['tanggal_pengembalian'] ?? null;
+    $diffSec = 0;
+    if ($mulai && $akhir) {
+    $diffSec = max(0, strtotime($akhir) - strtotime($mulai));
+    }
+    $durasiAwal = max(1, (int) floor($diffSec / 86400));
+    $subtotalAwal = ($produk->harga ?? 0) * ($barang['jumlah'] ?? 1) * $durasiAwal;
     @endphp
+
     <div class="item-keranjang"
       data-id="{{ $barang['produk_id'] }}"
-      data-key="{{ $key }}">
+      data-key="{{ $key }}"
+      data-harga="{{ $produk->harga }}"
+      data-durasi="{{ $durasiAwal }}">
       <input type="checkbox" class="checkbox" value="{{ $key }}">
       <img src="{{ asset('storage/' . $produk->gambar) }}" alt="{{ $produk->nama_produk }}">
       <div class="detail-item">
@@ -281,7 +293,7 @@
       </div>
 
       <div class="harga-item">
-        Rp{{ number_format($produk->harga * $barang['jumlah'], 0, ',', '.') }}
+        Rp{{ number_format($subtotalAwal, 0, ',', '.') }}
       </div>
     </div>
     @empty
@@ -335,22 +347,28 @@
 
   {{-- Script --}}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
   <script>
     const tombolCheckout = document.getElementById('checkoutBtn');
     const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 
-    // Pastikan ikon hapus tersembunyi saat awal load
     if (bulkDeleteBtn) {
       bulkDeleteBtn.classList.add('d-none');
       bulkDeleteBtn.style.display = 'none';
       bulkDeleteBtn.setAttribute('aria-hidden', 'true');
     }
 
-    // ===== Helper =====
-    function rupiah(n) {
-      return `Rp${(n||0).toLocaleString('id-ID')}`;
-    }
+    // ==== Helpers ====
+    const toDateUTC = (yyyyMMdd) => new Date(yyyyMMdd + 'T00:00:00Z');
+    const rupiah = (n) => `Rp${(Number(n) || 0).toLocaleString('id-ID')}`;
+
+    const hitungDurasiHari = (mulaiRaw, akhirRaw) => {
+      if (!mulaiRaw || !akhirRaw) return 1;
+      const start = toDateUTC(mulaiRaw);
+      const end = toDateUTC(akhirRaw);
+      const MS = 24 * 60 * 60 * 1000;
+      const diff = (end - start) / MS;
+      return Math.max(1, Math.round(diff));
+    };
 
     function clampQty(v) {
       const n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
@@ -365,22 +383,76 @@
       };
     }
 
+    // === FIX 1: Helper fetch aman JSON/non-JSON + kirim cookie & CSRF ===
+    async function fetchJSON(url, {
+      method = 'GET',
+      body,
+      headers = {}
+    } = {}) {
+      const finalHeaders = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        ...headers
+      };
+
+      let res;
+      try {
+        res = await fetch(url, {
+          method,
+          headers: finalHeaders,
+          body,
+          credentials: 'same-origin', // penting untuk bawa cookie sesi
+        });
+      } catch (e) {
+        return {
+          ok: false,
+          networkError: true,
+          status: 0,
+          data: null,
+          text: 'Network error'
+        };
+      }
+
+      // Coba parse JSON; jika gagal, fallback ke text agar tidak melempar
+      let data = null,
+        text = null;
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
+        }
+      } else {
+        try {
+          text = await res.text();
+        } catch {
+          text = null;
+        }
+      }
+
+      return {
+        ok: res.ok,
+        status: res.status,
+        data,
+        text
+      };
+    }
+
     async function updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian) {
-      const res = await fetch(`/keranjang/ubah/${id}`, {
+      const lama_hari = hitungDurasiHari(tanggalMulai, tanggalPengembalian);
+      const resp = await fetchJSON(`/keranjang/ubah/${encodeURIComponent(id)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
         body: JSON.stringify({
           jumlah,
           tanggal_mulai: tanggalMulai,
-          tanggal_pengembalian: tanggalPengembalian
+          tanggal_pengembalian: tanggalPengembalian,
+          lama_hari
         })
       });
-      return res.json();
+      return resp;
     }
-
 
     function updateTotalSelected() {
       let total = 0;
@@ -424,17 +496,24 @@
     const debouncedTypeUpdate = debounce(async (item, id, jumlah) => {
       const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
       const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
-      try {
-        const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian);
-        if (data.success) {
-          item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
-          updateTotalSelected();
-          window.dispatchEvent(new Event('cart:updated'));
-        } else {
-          alert(data.pesan || 'Gagal memperbarui jumlah.');
-        }
-      } catch {
-        // Biarkan silent; user bisa coba lagi
+
+      // Optimistic subtotal
+      const harga = Number(item.dataset.harga || 0);
+      const durasi = hitungDurasiHari(tanggalMulai, tanggalPengembalian);
+      const subLoc = harga * durasi * jumlah;
+      item.querySelector('.harga-item').innerText = rupiah(subLoc);
+      updateTotalSelected();
+
+      const resp = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian);
+      if (!resp.ok) return; // diam, biar user coba lagi
+      const {
+        data
+      } = resp;
+      if (data && data.success) {
+        const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc;
+        item.querySelector('.harga-item').innerText = rupiah(sub);
+        updateTotalSelected();
+        window.dispatchEvent(new Event('cart:updated'));
       }
     }, 450);
 
@@ -444,129 +523,158 @@
       const btnPlus = item.querySelector('.tambah');
       const qtyInput = item.querySelector('.kontrol-jumlah input');
 
-      // Hilangkan readonly agar bisa diketik
       if (qtyInput && qtyInput.hasAttribute('readonly')) qtyInput.removeAttribute('readonly');
-
-      // Pastikan nilai awal valid
       qtyInput.value = clampQty(qtyInput.value);
 
-      // Klik PLUS
       btnPlus.addEventListener('click', async () => {
         const next = clampQty(qtyInput.value) + 1;
         qtyInput.value = next;
+
         const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
         const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
-        try {
-          const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
-          if (data.success) {
-            item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
-            updateTotalSelected();
-            window.dispatchEvent(new Event('cart:updated'));
-          } else {
-            alert(data.pesan || 'Gagal memperbarui jumlah.');
-          }
-        } catch {
-          alert('Gagal memperbarui jumlah (koneksi).');
+
+        const harga = Number(item.dataset.harga || 0);
+        const durasi = hitungDurasiHari(tanggalMulai, tanggalPengembalian);
+        const subLoc = harga * durasi * next;
+        item.querySelector('.harga-item').innerText = rupiah(subLoc);
+        updateTotalSelected();
+
+        const resp = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
+        if (!resp.ok) {
+          if (resp.status === 419) alert('Sesi kadaluarsa. Silakan muat ulang halaman.');
+          return;
+        }
+        const {
+          data
+        } = resp;
+        if (data && data.success) {
+          const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc;
+          item.querySelector('.harga-item').innerText = rupiah(sub);
+          updateTotalSelected();
+          window.dispatchEvent(new Event('cart:updated'));
         }
       });
 
-      // Klik MINUS
       btnMinus.addEventListener('click', async () => {
-        const next = Math.max(1, clampQty(qtyInput.value) - 1);
-        if (next === clampQty(qtyInput.value)) return; // tidak berubah
+        const current = clampQty(qtyInput.value);
+        const next = Math.max(1, current - 1);
+        if (next === current) return;
         qtyInput.value = next;
+
         const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
         const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
-        try {
-          const data = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
-          if (data.success) {
-            item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
-            updateTotalSelected();
-            window.dispatchEvent(new Event('cart:updated'));
-          } else {
-            alert(data.pesan || 'Gagal memperbarui jumlah.');
-          }
-        } catch {
-          alert('Gagal memperbarui jumlah (koneksi).');
+
+        const harga = Number(item.dataset.harga || 0);
+        const durasi = hitungDurasiHari(tanggalMulai, tanggalPengembalian);
+        const subLoc = harga * durasi * next;
+        item.querySelector('.harga-item').innerText = rupiah(subLoc);
+        updateTotalSelected();
+
+        const resp = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
+        if (!resp.ok) {
+          if (resp.status === 419) alert('Sesi kadaluarsa. Silakan muat ulang halaman.');
+          return;
+        }
+        const {
+          data
+        } = resp;
+        if (data && data.success) {
+          const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc;
+          item.querySelector('.harga-item').innerText = rupiah(sub);
+          updateTotalSelected();
+          window.dispatchEvent(new Event('cart:updated'));
         }
       });
 
-      // Ketik manual (live validate + debounce update)
+      // Ketik manual + sinkron debounce (satu versi saja, hapus duplikat blur lama)
       qtyInput.addEventListener('input', () => {
-        // bersihkan non-digit, tidak kirim ke server dulu
-        const caret = qtyInput.selectionStart;
-        qtyInput.value = String(qtyInput.value).replace(/[^\d]/g, '');
-        // kembalikan caret kira2 (opsional)
-        try {
-          qtyInput.setSelectionRange(caret, caret);
-        } catch {}
-        const val = clampQty(qtyInput.value);
-        debouncedTypeUpdate(item, id, val);
-      });
-
-      // Saat blur, pastikan minimal 1 dan sinkron server
-      qtyInput.addEventListener('blur', async () => {
         const jumlah = clampQty(qtyInput.value);
-        qtyInput.value = jumlah;
-
-        const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value;
-        const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value;
-
-        try {
-          const data = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian);
-          if (data.success) {
-            item.querySelector('.harga-item').innerText = rupiah(data.subtotal);
-            updateTotalSelected();
-          }
-        } catch {}
+        debouncedTypeUpdate(item, id, jumlah);
+      });
+      qtyInput.addEventListener('blur', () => {
+        qtyInput.value = clampQty(qtyInput.value);
       });
     });
 
-    // ===== Simpan tanggal (AJAX) =====
+    // ===== FIX 2: Simpan tanggal (AJAX) aman & informatif =====
     async function saveDatesForItem(itemEl) {
       const id = itemEl.dataset.id;
       const tanggalMulai = itemEl.querySelector('input[name="tanggal_mulai"]').value;
       const tanggalPengembalian = itemEl.querySelector('input[name="tanggal_pengembalian"]').value;
       const status = itemEl.querySelector('.status-simpan');
 
+      if (!tanggalMulai || !tanggalPengembalian) {
+        if (status) {
+          status.style.display = 'inline';
+          status.textContent = 'Tanggal belum lengkap';
+        }
+        setTimeout(() => {
+          if (status) status.style.display = 'none';
+        }, 1200);
+        return;
+      }
+      if (toDateUTC(tanggalPengembalian) < toDateUTC(tanggalMulai)) {
+        if (status) {
+          status.style.display = 'inline';
+          status.textContent = 'Tanggal tidak valid';
+        }
+        setTimeout(() => {
+          if (status) status.style.display = 'none';
+        }, 1200);
+        return;
+      }
+
+      const harga = Number(itemEl.dataset.harga || 0);
+      const qty = clampQty(itemEl.querySelector('.kontrol-jumlah input').value);
+      const durasi = hitungDurasiHari(tanggalMulai, tanggalPengembalian);
+      const subLoc = harga * durasi * qty;
+
+      // Optimistic UI
+      itemEl.querySelector('.harga-item').innerText = rupiah(subLoc);
+      updateTotalSelected();
+
       if (status) {
         status.style.display = 'inline';
         status.textContent = 'Menyimpan…';
       }
 
-      try {
-        const res = await fetch(`/keranjang/ubah/${id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          },
-          body: JSON.stringify({
-            tanggal_mulai: tanggalMulai,
-            tanggal_pengembalian: tanggalPengembalian
-          })
-        });
-        const data = await res.json();
+      const resp = await fetchJSON(`/keranjang/ubah/${encodeURIComponent(id)}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          tanggal_mulai: tanggalMulai,
+          tanggal_pengembalian: tanggalPengembalian,
+          jumlah: qty,
+          lama_hari: durasi
+        })
+      });
 
-        if (data.success) {
-          if (status) {
-            status.textContent = 'Tersimpan';
-          }
-          setTimeout(() => {
-            if (status) status.style.display = 'none';
-          }, 900);
-        } else {
-          if (status) {
-            status.textContent = 'Gagal menyimpan';
-          }
-          setTimeout(() => {
-            if (status) status.style.display = 'none';
-          }, 1500);
-        }
-      } catch {
+      if (!resp.ok) {
         if (status) {
-          status.textContent = 'Gagal koneksi';
+          status.textContent =
+            resp.status === 419 ? 'Sesi kadaluarsa' :
+            resp.status === 422 ? 'Input tidak valid' :
+            resp.networkError ? 'Gagal koneksi' :
+            `Gagal (${resp.status})`;
         }
+        setTimeout(() => {
+          if (status) status.style.display = 'none';
+        }, 1500);
+        return;
+      }
+
+      const {
+        data
+      } = resp;
+      if (data && data.success) {
+        const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc;
+        itemEl.querySelector('.harga-item').innerText = rupiah(sub);
+        updateTotalSelected();
+        if (status) status.textContent = 'Tersimpan';
+        setTimeout(() => {
+          if (status) status.style.display = 'none';
+        }, 900);
+      } else {
+        if (status) status.textContent = 'Gagal menyimpan';
         setTimeout(() => {
           if (status) status.style.display = 'none';
         }, 1500);
@@ -592,11 +700,11 @@
         e.preventDefault();
         return;
       }
-      e.preventDefault(); // hapus ini kalau route checkout siap
+      e.preventDefault(); // TODO: ganti ke route checkout saat siap
       alert('Checkout siap. Sambungkan ke route /checkout milikmu.');
     });
 
-    // ===== Hapus massal dengan modal Bootstrap =====
+    // ===== Hapus massal (tetap sama dengan punyamu, disingkat) =====
     if (bulkDeleteBtn) {
       const modalEl = document.getElementById('confirmDeleteModal');
       const confirmBtn = document.getElementById('confirmDeleteBtn');
@@ -608,54 +716,30 @@
       bulkDeleteBtn.addEventListener('click', () => {
         selectedItems = Array.from(document.querySelectorAll('.checkbox:checked'));
         if (selectedItems.length === 0) return;
-
         deleteText.innerHTML = `Apakah kamu yakin ingin menghapus <b>${selectedItems.length}</b> produk dari keranjang?`;
         bsModal.show();
       });
 
       confirmBtn.addEventListener('click', async () => {
         bsModal.hide();
+        const keys = selectedItems.map(cb => cb.value || cb.closest('.item-keranjang')?.dataset.key).filter(Boolean);
 
-        const keys = selectedItems
-          .map(cb => cb.value || cb.closest('.item-keranjang')?.dataset.key)
-          .filter(Boolean);
-
-        if (keys.length === 0) return;
-
-        const res = await fetch(`/keranjang/hapus-banyak`, {
+        const resp = await fetchJSON(`/keranjang/hapus-banyak`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          },
           body: JSON.stringify({
             keys
           })
         });
+        if (!resp.ok || !resp.data?.success) return;
 
-        let data = {};
-        try {
-          data = await res.json();
-        } catch {}
-
-        // Jika gagal, cukup diam (tanpa alert). Boleh console.error untuk debug dev.
-        if (!res.ok || !data?.success) {
-          console.error('Gagal menghapus item terpilih.', data);
-          return;
-        }
-
-        // Hapus elemen DOM yang berhasil dihapus (tanpa notif)
-        const removed = Array.isArray(data.removed_keys) ? data.removed_keys : keys;
+        const removed = Array.isArray(resp.data.removed_keys) ? resp.data.removed_keys : keys;
         removed.forEach(k => {
           const el = document.querySelector(`.item-keranjang[data-key="${CSS.escape(k)}"]`);
           if (el) el.remove();
         });
 
-        // Jika keranjang kosong setelah penghapusan → tampilkan pesan kosong & sembunyikan total
         if (document.querySelectorAll('.item-keranjang').length === 0) {
           const container = document.querySelector('.cart-container');
-
-          // Hindari duplikasi pesan
           if (!document.getElementById('emptyCartMsg')) {
             const emptyMsg = document.createElement('p');
             emptyMsg.id = 'emptyCartMsg';
@@ -663,26 +747,24 @@
             emptyMsg.textContent = 'Keranjang Anda masih kosong 🛒';
             container.appendChild(emptyMsg);
           }
-
           const totalSection = document.getElementById('totalSection');
           if (totalSection) totalSection.style.display = 'none';
         }
 
-        // Update badge cart bila backend mengembalikan count
-        if (typeof data.count === 'number') {
+        if (typeof resp.data.count === 'number') {
           const badge = document.getElementById('cart-badge');
           if (badge) {
-            badge.textContent = data.count;
-            badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+            badge.textContent = resp.data.count;
+            badge.style.display = resp.data.count > 0 ? 'inline-block' : 'none';
           }
         }
 
-        // Bersihkan seleksi & hitung ulang total + state tombol
         selectedItems = [];
         updateTotalSelected();
       });
     }
-    // Init awal
+
+    // Init
     updateTotalSelected();
   </script>
 </body>
