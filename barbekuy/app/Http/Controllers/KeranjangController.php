@@ -76,33 +76,56 @@ class KeranjangController extends Controller
     public function ubah(Request $request, $id)
     {
         $data = $request->json()->all() ?: $request->all();
-        $tanggalMulai   = $data['tanggal_mulai'] ?? now()->toDateString();
-        $tanggalPengembalian = $data['tanggal_pengembalian'] ?? now()->toDateString();
-        $key = $id . '_' . $tanggalMulai . '_' . $tanggalPengembalian;
+
+        $tanggalMulai         = $data['tanggal_mulai'] ?? now()->toDateString();
+        $tanggalPengembalian  = $data['tanggal_pengembalian'] ?? now()->toDateString();
+
+        $oldKey = $data['key'] ?? null;                    // ⬅️ key lama dari client
+        $newKey = $id . '_' . $tanggalMulai . '_' . $tanggalPengembalian;
 
         $keranjang = session()->get('keranjang', []);
 
-        if (!isset($keranjang[$key])) {
+        // 1) Temukan item di key lama; kalau tidak ada, fallback cari di key baru
+        if ($oldKey && isset($keranjang[$oldKey])) {
+            $row = $keranjang[$oldKey];
+        } elseif (isset($keranjang[$newKey])) {
+            $row = $keranjang[$newKey];
+            $oldKey = $newKey; // supaya variabel konsisten
+        } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Produk tidak ditemukan di keranjang.',
             ]);
         }
 
-        // Update jumlah
+        // 2) Update field
+        $row['tanggal_mulai']        = $tanggalMulai;
+        $row['tanggal_pengembalian'] = $tanggalPengembalian;
+
         if (isset($data['jumlah'])) {
-            $keranjang[$key]['jumlah'] = max(1, (int)$data['jumlah']);
+            $row['jumlah'] = max(1, (int)$data['jumlah']);
+        }
+
+        // 3) Jika key berubah (tanggal berubah) → migrasi entry
+        $newKeyCreated = null;
+        if ($oldKey !== $newKey) {
+            $keranjang[$newKey] = $row;
+            unset($keranjang[$oldKey]);
+            $newKeyCreated = $newKey;                      // ⬅️ akan dikirim ke client
+        } else {
+            $keranjang[$oldKey] = $row;
         }
 
         session()->put('keranjang', $keranjang);
 
-        $produk = \App\Models\Produk::where('id_produk', $id)->firstOrFail();
-        $subtotal = (int)$produk->harga * (int)$keranjang[$key]['jumlah'];
+        $produk   = \App\Models\Produk::where('id_produk', $id)->firstOrFail();
+        $subtotal = (int)$produk->harga * (int)$row['jumlah'];
 
         return response()->json([
-            'success' => true,
-            'subtotal' => number_format($subtotal, 0, ',', '.'),
-            'jumlah' => $keranjang[$key]['jumlah'],
+            'success'   => true,
+            'subtotal'  => number_format($subtotal, 0, ',', '.'),
+            'jumlah'    => $row['jumlah'],
+            'new_key'   => $newKeyCreated,                // ⬅️ null kalau tidak berubah
         ]);
     }
 

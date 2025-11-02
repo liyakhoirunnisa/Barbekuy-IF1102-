@@ -440,18 +440,24 @@
       };
     }
 
-    async function updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian) {
-      const lama_hari = hitungDurasiHari(tanggalMulai, tanggalPengembalian);
+    async function updateQtyOnServer(item, id, jumlah, tanggalMulai, tanggalPengembalian) {
+      const key = item.dataset.key;
       const resp = await fetchJSON(`/keranjang/ubah/${encodeURIComponent(id)}`, {
         method: 'POST',
         body: JSON.stringify({
+          key,
           jumlah,
           tanggal_mulai: tanggalMulai,
-          tanggal_pengembalian: tanggalPengembalian,
-          lama_hari
+          tanggal_pengembalian: tanggalPengembalian
         })
       });
-      return resp;
+
+      if (resp.data && resp.data.new_key) {
+        item.dataset.key = resp.data.new_key; // sinkron key baru ke DOM
+        const cb = item.querySelector('.checkbox');
+        if (cb) cb.value = resp.data.new_key;
+      }
+      return resp; // ← consistent: { ok, status, data }
     }
 
     function updateTotalSelected() {
@@ -504,7 +510,7 @@
       item.querySelector('.harga-item').innerText = rupiah(subLoc);
       updateTotalSelected();
 
-      const resp = await updateQtyOnServer(id, jumlah, tanggalMulai, tanggalPengembalian);
+      const resp = await updateQtyOnServer(item, id, jumlah, tanggalMulai, tanggalPengembalian);
       if (!resp.ok) return; // diam, biar user coba lagi
       const {
         data
@@ -539,7 +545,7 @@
         item.querySelector('.harga-item').innerText = rupiah(subLoc);
         updateTotalSelected();
 
-        const resp = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
+        const resp = await updateQtyOnServer(item, id, next, tanggalMulai, tanggalPengembalian);
         if (!resp.ok) {
           if (resp.status === 419) alert('Sesi kadaluarsa. Silakan muat ulang halaman.');
           return;
@@ -570,7 +576,7 @@
         item.querySelector('.harga-item').innerText = rupiah(subLoc);
         updateTotalSelected();
 
-        const resp = await updateQtyOnServer(id, next, tanggalMulai, tanggalPengembalian);
+        const resp = await updateQtyOnServer(item, id, next, tanggalMulai, tanggalPengembalian);
         if (!resp.ok) {
           if (resp.status === 419) alert('Sesi kadaluarsa. Silakan muat ulang halaman.');
           return;
@@ -641,6 +647,7 @@
       const resp = await fetchJSON(`/keranjang/ubah/${encodeURIComponent(id)}`, {
         method: 'POST',
         body: JSON.stringify({
+          key: itemEl.dataset.key,
           tanggal_mulai: tanggalMulai,
           tanggal_pengembalian: tanggalPengembalian,
           jumlah: qty,
@@ -669,6 +676,11 @@
         const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc;
         itemEl.querySelector('.harga-item').innerText = rupiah(sub);
         updateTotalSelected();
+        if (data.new_key) {
+          itemEl.dataset.key = data.new_key; 
+          const cb = itemEl.querySelector('.checkbox'); 
+          if (cb) cb.value = data.new_key; 
+        }
         if (status) status.textContent = 'Tersimpan';
         setTimeout(() => {
           if (status) status.style.display = 'none';
