@@ -171,6 +171,48 @@
         .btn-lihat-lebih:hover .arrow {
             transform: translateX(6px);
         }
+
+        /* === Floating WhatsApp Button === */
+        .floating-wa {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 1050; /* di atas konten umum */
+        }
+        .floating-wa a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #25D366; /* warna WA */
+            color: #fff;
+            text-decoration: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,.18);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        }
+        .floating-wa a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0,0,0,.24);
+            filter: brightness(1.05);
+        }
+        .floating-wa .badge-text {
+            position: absolute;
+            right: 66px; /* muncul di kiri bulatan */
+            bottom: 8px;
+            background: #ffffff;
+            color: #1f2937;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: .9rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,.12);
+            white-space: nowrap;
+        }
+        @media (max-width: 576px) {
+            .floating-wa { right: 14px; bottom: 14px; }
+            .floating-wa .badge-text { display: none; } /* rapikan di mobile */
+        }
     </style>
 </head>
 
@@ -406,19 +448,13 @@
                             class="text-white text-decoration-none">
                             Sumampir Kulon, Sumampir, Purwokerto Utara, Banyumas Regency, Central Java 53125
                         </a><br>
-                        <!-- Link ke WhatsApp -->
-                        <a href="https://wa.me/6287746567500"
-                            target="_blank"
-                            class="text-white text-decoration-none d-flex align-items-center mt-1">
-                            <i class="bi bi-whatsapp me-2"></i>
-                            <span>+6287746567500</span>
-                        </a>
+                        {{-- Nomor WA dipindah ke tombol melayang --}}
                     </p>
                 </div>
             </div>
-
-            <!-- Garis Putus-Putus -->
             <hr style="border-top: 2px dotted #fff; margin: 30px 0;">
+            <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
+            </div>
 
             <!-- Bawah Footer -->
             <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
@@ -443,8 +479,59 @@
         </div>
     </footer>
 
+    {{-- Floating WhatsApp Button --}}
+    <div class="floating-wa" aria-hidden="false">
+        <a href="https://wa.me/6287746567500" target="_blank" aria-label="Chat WhatsApp Barbekuy">
+            <i class="bi bi-whatsapp" style="font-size: 1.8rem;"></i>
+        </a>
+        <div class="badge-text">Butuh bantuan?</div>
+    </div>
+    <div class="floating-wa" aria-hidden="false">
+  <a href="#" id="wa-fab" rel="noopener" aria-label="Chat WhatsApp Barbekuy">
+      <i class="bi bi-whatsapp" style="font-size: 1.8rem;"></i>
+  </a>
+  <div class="badge-text">Butuh bantuan?</div>
+</div>
+
     {{-- Bootstrap JS --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{-- Script: Prefill WhatsApp (mobile/desktop + fallback) --}}
+    <script>
+      (function () {
+        var btn = document.getElementById('wa-fab');
+        if (!btn) return;
+
+        var phone = '6287746567500'; // tanpa + / spasi / dash
+        var msg   = 'Halo kak! saya mau tanya terkait Barbekuy'
+        var encoded = encodeURIComponent(msg);
+
+        function buildUrl() {
+          var ua = navigator.userAgent || '';
+          var isMobile = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(ua);
+          if (isMobile) {
+            // App WhatsApp di mobile (paling stabil untuk prefill)
+            return 'whatsapp://send?phone=' + phone + '&text=' + encoded;
+          }
+          // WhatsApp Web di desktop
+          return 'https://web.whatsapp.com/send?phone=' + phone + '&text=' + encoded;
+        }
+
+        // Set href awal (kalau user open in new tab)
+        btn.setAttribute('href', buildUrl());
+
+        // Klik => pastikan buka URL yang benar; fallback ke api.whatsapp jika perlu
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          var url = buildUrl();
+          var win = window.open(url, '_blank', 'noopener');
+          if (!win) {
+            window.location.href = 'https://api.whatsapp.com/send?phone=' + phone + '&text=' + encoded;
+          }
+        }, false);
+      })();
+    </script>
+
 </body>
 
 </html>
