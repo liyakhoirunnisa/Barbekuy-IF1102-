@@ -73,4 +73,29 @@ class PengaturanUserController extends Controller
 
         return back()->with('success', 'Pengaturan notifikasi tersimpan.');
     }
+
+    /** ✅ Verifikasi akun */
+    public function verify(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'verification_code' => ['required','string','size:6'],
+        ]);
+
+        if (!$user->verification_code) {
+            return back()->withErrors(['verification_code' => 'Tidak ada kode yang menunggu verifikasi.'])->withInput();
+        }
+
+        if ($request->verification_code !== $user->verification_code) {
+            return back()->withErrors(['verification_code' => 'Kode verifikasi salah.'])->withInput();
+        }
+
+        $user->update([
+            'email_verified_at' => now(),
+            'verification_code' => null,
+        ]);
+
+        return back()->with('success', 'Akun berhasil diverifikasi.');
+    }
 }
