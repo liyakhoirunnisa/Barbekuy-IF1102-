@@ -30,6 +30,10 @@ class Pemesanan extends Model
         'status_pesanan',
     ];
 
+    public function detailPemesanan()
+    {
+        return $this->hasMany(\App\Models\DetailPemesanan::class, 'id_pesanan', 'id_pesanan');
+    }
 
     // Relasi ke user
     public function user()
@@ -38,8 +42,8 @@ class Pemesanan extends Model
     }
 
     // Relasi ke detail pesanan
-    public function detailPesanan()
+    public function detail()
     {
-        return $this->belongsTo(DetailPesanan::class, 'id_detail_pesanan', 'id_detail_pesanan');
+        return $this->hasMany(DetailPemesanan::class, 'id_pesanan', 'id_pesanan');
     }
 }

@@ -66,6 +66,9 @@ Route::get('/menu', [ProdukController::class, 'index'])->name('menu');
 | 🧑‍💼 Area Customer
 |--------------------------------------------------------------------------
 */
+Route::post('/produk/{id}/stok-tersedia', [\App\Http\Controllers\ProdukController::class, 'cekStok'])
+    ->name('produk.cekStok');
+
 // 🔢 Badge jumlah keranjang (AJAX)
 Route::middleware(['auth'])->get('/keranjang/count', function () {
     $keranjang = session('keranjang', []);
@@ -85,6 +88,22 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/keranjang/ubah/{id}', [KeranjangController::class, 'ubah'])->name('keranjang.ubah');
     Route::post('/keranjang/hapus-banyak', [KeranjangController::class, 'hapusBanyak'])->name('keranjang.hapusBanyak');
     Route::delete('/keranjang/hapus/{key}', [KeranjangController::class, 'hapusByKey'])->name('keranjang.hapusByKey');
+
+    Route::get('/pemesanan/{id}', [PemesananController::class, 'show'])->name('pemesanan.show');
+    Route::post('/pemesanan',      [PemesananController::class, 'store'])->name('pemesanan.store');
+    Route::post('/pemesanan/confirm', [PemesananController::class, 'confirm'])
+        ->name('pemesanan.confirm');
+    // 💳 Multi-checkout (banyak produk sekaligus)
+    Route::post('/pemesanan/invoice', [PemesananController::class, 'storeInvoice'])
+        ->name('pemesanan.invoice.store');
+
+    // Siapkan data checkout (single/multi) ke session, lalu redirect ke halaman pemesanan.blade.php
+    Route::post('/pemesanan/prepare', [\App\Http\Controllers\PemesananController::class, 'prepare'])
+        ->name('pemesanan.prepare');
+
+    // Halaman konfirmasi pemesanan (SELALU render pemesanan.blade.php)
+    Route::get('/pemesanan', [\App\Http\Controllers\PemesananController::class, 'create'])
+        ->name('pemesanan.create');
 
     // ✅ Riwayat Pesanan — dipakai navbar: route('riwayat.semua')
     Route::get('/riwayat', [PemesananController::class, 'riwayat'])->name('riwayat.semua');
@@ -147,8 +166,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pengaturan/notif',   [PengaturanUserController::class, 'updateNotif'])->name('pengaturan.notif.update');
     Route::post('/pengaturan/verify',  [PengaturanUserController::class, 'verify'])->name('pengaturan.verify');
 });
-Route::post('/produk/{id}/stok-tersedia', [\App\Http\Controllers\ProdukController::class, 'cekStok'])
-    ->name('produk.cekStok');
 
 /*
 |--------------------------------------------------------------------------

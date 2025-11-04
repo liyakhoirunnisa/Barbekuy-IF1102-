@@ -61,6 +61,15 @@
       z-index: 5;
     }
 
+    /* Ukuran checkbox item & "Semua" sama */
+    .item-keranjang .checkbox,
+    #selectAll {
+      width: 1.2rem;
+      height: 1.2rem;
+      accent-color: #751A25;
+      cursor: pointer;
+    }
+
     .item-keranjang img {
       width: 120px;
       border-radius: 12px;
@@ -225,6 +234,7 @@
       line-height: 1;
     }
 
+
     @media (max-width: 768px) {
       .item-keranjang {
         flex-direction: column;
@@ -302,7 +312,11 @@
 
     {{-- Bagian Total --}}
     <div id="totalSection" class="bagian-total" style="display:none;">
-      <span>Total Pembayaran</span>
+      <!-- ✅ Select All -->
+      <div class="form-check m-0 d-flex align-items-center gap-2">
+        <input type="checkbox" id="selectAll">
+        <label class="form-check-label" for="selectAll" style="user-select:none;">Semua</label>
+      </div>
       <div class="d-flex align-items-center gap-3">
         <span id="totalHarga">Rp0</span>
 
@@ -677,9 +691,9 @@
         itemEl.querySelector('.harga-item').innerText = rupiah(sub);
         updateTotalSelected();
         if (data.new_key) {
-          itemEl.dataset.key = data.new_key; 
-          const cb = itemEl.querySelector('.checkbox'); 
-          if (cb) cb.value = data.new_key; 
+          itemEl.dataset.key = data.new_key;
+          const cb = itemEl.querySelector('.checkbox');
+          if (cb) cb.value = data.new_key;
         }
         if (status) status.textContent = 'Tersimpan';
         setTimeout(() => {
@@ -705,15 +719,93 @@
       });
     });
 
-    // ===== Checkout guard =====
-    tombolCheckout.addEventListener('click', (e) => {
-      const selected = document.querySelectorAll('.checkbox:checked');
-      if (selected.length === 0) {
-        e.preventDefault();
+    // ===== Checkout redirect ke halaman pemesanan =====
+    tombolCheckout.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      const checked = Array.from(document.querySelectorAll('.checkbox:checked'));
+      if (checked.length === 0) {
+        alert('Pilih minimal 1 item untuk checkout.');
         return;
       }
-      e.preventDefault(); // TODO: ganti ke route checkout saat siap
-      alert('Checkout siap. Sambungkan ke route /checkout milikmu.');
+
+      // === Kalau hanya 1 item → redirect ke halaman pemesanan tunggal (lama)
+      if (checked.length === 1) {
+        const item = checked[0].closest('.item-keranjang');
+        const id = item?.dataset.id;
+        const mulai = item?.querySelector('input[name="tanggal_mulai"]')?.value;
+        const akhir = item?.querySelector('input[name="tanggal_pengembalian"]')?.value;
+        const qtyRaw = item?.querySelector('.kontrol-jumlah input')?.value || '1';
+        const qty = Math.max(1, parseInt(String(qtyRaw).replace(/[^\d]/g, ''), 10) || 1);
+
+        if (!id || !mulai || !akhir) {
+          alert('Tanggal belum lengkap.');
+          return;
+        }
+
+        const base = `{{ url('/pemesanan') }}`;
+        const url = `${base}/${encodeURIComponent(id)}` +
+          `?tanggal_mulai_sewa=${encodeURIComponent(mulai)}` +
+          `&tanggal_pengembalian=${encodeURIComponent(akhir)}` +
+          `&jumlah=${encodeURIComponent(qty)}`;
+        window.location.href = url;
+        return;
+      }
+
+      // === Kalau lebih dari 1 item → multi-checkout (LEWAT HALAMAN PEMESANAN)
+      const items = checked.map(cb => {
+        const el = cb.closest('.item-keranjang');
+        const id = el.dataset.id;
+        const jumlah = clampQty(el.querySelector('.kontrol-jumlah input').value);
+        const mulai = el.querySelector('input[name="tanggal_mulai"]').value;
+        const akhir = el.querySelector('input[name="tanggal_pengembalian"]').value;
+
+        return {
+          id_produk: id,
+          jumlah_sewa: jumlah,
+          tanggal_mulai_sewa: mulai,
+          tanggal_pengembalian: akhir
+        };
+      });
+
+      // Validasi tanggal semua produk
+      const invalid = items.some(it => !it.tanggal_mulai_sewa || !it.tanggal_pengembalian);
+      if (invalid) {
+        alert('Pastikan semua produk memiliki tanggal sewa lengkap.');
+        return;
+      }
+
+      // 🔁 Kirim ke controller untuk disimpan di SESSION → redirect ke halaman pemesanan
+      try {
+        const resp = await fetch("{{ route('pemesanan.prepare') }}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+          },
+          body: JSON.stringify({
+            items
+          })
+        });
+
+        // aman untuk JSON/non-JSON
+        let data = null;
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        }
+
+        if (resp.ok && data?.ok && data?.redirect) {
+          window.location.href = data.redirect; // -> route('pemesanan.create')
+        } else {
+          alert((data && data.message) || 'Gagal menyiapkan checkout.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Terjadi kesalahan saat menyiapkan checkout.');
+      }
+
+
     });
 
     // ===== Hapus massal (tetap sama dengan punyamu, disingkat) =====
@@ -775,6 +867,38 @@
         updateTotalSelected();
       });
     }
+
+    // === LOGIKA PILIH SEMUA ===
+    const selectAllEl = document.getElementById('selectAll');
+
+    // Fungsi bantu: ambil semua checkbox item
+    function getItemCheckboxes() {
+      return Array.from(document.querySelectorAll('.item-keranjang .checkbox'));
+    }
+
+    // Saat "Pilih Semua" diubah → centang / uncentang semua item
+    if (selectAllEl) {
+      selectAllEl.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        getItemCheckboxes().forEach(cb => cb.checked = checked);
+        updateTotalSelected();
+      });
+    }
+
+    // Modifikasi fungsi updateTotalSelected agar sinkron dengan "Pilih Semua"
+    const oldUpdate = updateTotalSelected;
+    updateTotalSelected = function() {
+      oldUpdate();
+
+      const items = getItemCheckboxes();
+      const allChecked = items.length > 0 && items.every(cb => cb.checked);
+      const someChecked = items.some(cb => cb.checked);
+
+      if (selectAllEl) {
+        selectAllEl.checked = allChecked;
+        selectAllEl.indeterminate = !allChecked && someChecked; // semi-centang
+      }
+    };
 
     // Init
     updateTotalSelected();
