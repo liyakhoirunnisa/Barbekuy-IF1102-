@@ -327,7 +327,7 @@
           <i class="bi bi-trash" style="font-size:2rem;"></i>
         </button>
 
-        <a href="#" id="checkoutBtn" class="btn btn-primary-custom px-4 py-2">Checkout</a>
+        <a href="#" id="checkoutBtn" class="btn btn-primary-custom px-4 py-2">Pesan</a>
       </div>
     </div>
 

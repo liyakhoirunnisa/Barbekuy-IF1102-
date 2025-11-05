@@ -300,37 +300,42 @@
   {{-- ====== SCRIPT FIXED (Blade di JS rapi) ====== --}}
   @php
   $loginUrl = \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login');
-  @endphp
-  <script>
-    // ---- UTIL ----
-    const IS_LOGGED_IN = @json(auth() -> check());
-    const LOGIN_URL = @json($loginUrl);
+  $keranjangUrl = \Illuminate\Support\Facades\Route::has('keranjang') ? route('keranjang') : url('/keranjang'); // <-- [BARU]
+    @endphp
 
-    const toDateUTC = (yyyyMMdd) => {
+    <script>
+    // ---- UTIL ----
+    const IS_LOGGED_IN = @json(auth()->check()); // (sudah ada di file-mu; boleh biarkan)
+    const LOGIN_URL = @json($loginUrl); // (sudah ada di file-mu; boleh biarkan)
+    const KERANJANG_URL = @json($keranjangUrl); // <-- [BARU]
+      // mode aksi saat user membuka modal: 'cart' (ikon keranjang) atau 'buy' (tombol Beli)
+      let CURRENT_ACTION='cart' ; // <-- [BARU]
+
+      const toDateUTC=(yyyyMMdd)=> {
       // Hindari masalah timezone: paksa 00:00:00 UTC
       return new Date(yyyyMMdd + 'T00:00:00Z');
-    };
+      };
 
-    const hitungDurasiHari = (mulaiRaw, akhirRaw) => {
+      const hitungDurasiHari = (mulaiRaw, akhirRaw) => {
       // 29->30 = 1 hari, 29->31 = 2 hari, dst.
       const start = toDateUTC(mulaiRaw);
       const end = toDateUTC(akhirRaw);
       const MS_PER_DAY = 24 * 60 * 60 * 1000;
       const diff = (end - start) / MS_PER_DAY;
       return Math.max(1, Math.round(diff)); // minimal 1 hari
-    };
+      };
 
-    const formatRupiah = (angka) => {
+      const formatRupiah = (angka) => {
       angka = Number(angka) || 0;
       return 'Rp' + angka.toLocaleString('id-ID');
-    };
+      };
 
-    // ---- STATE ----
-    let currentProdukId = '';
-    let currentProdukNama = '';
-    let currentHargaSatuan = 0; // harga per hari per item (dari data-harga)
+      // ---- STATE ----
+      let currentProdukId = '';
+      let currentProdukNama = '';
+      let currentHargaSatuan = 0; // harga per hari per item (dari data-harga)
 
-    function bukaModalTanggal(idProduk, namaProduk, hargaSatuan) {
+      function bukaModalTanggal(idProduk, namaProduk, hargaSatuan) {
       currentProdukId = idProduk;
       currentProdukNama = namaProduk;
       currentHargaSatuan = Number(hargaSatuan) || 0;
@@ -342,151 +347,187 @@
       document.getElementById('jumlahSewa').value = 1;
 
       new bootstrap.Modal(document.getElementById('calendarModal')).show();
-    }
+      }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.ikon-keranjang, .btn-tanggal').forEach(btn => {
-        btn.addEventListener('click', function() {
-          if (!IS_LOGGED_IN) {
-            window.location = LOGIN_URL;
-            return;
-          }
-          const idProduk = this.getAttribute('data-produk');
-          const harga = this.getAttribute('data-harga') || '0';
-          const namaProduk = this.closest('article')?.querySelector('h5')?.innerText || '';
-          bukaModalTanggal(idProduk, namaProduk, harga);
+      document.addEventListener('DOMContentLoaded', () => {
+      // 3a) Klik IKON KERANJANG -> mode 'cart'
+      document.querySelectorAll('.ikon-keranjang').forEach(btn => {
+      btn.addEventListener('click', function () {
+      if (!IS_LOGGED_IN) { window.location = LOGIN_URL; return; }
+      CURRENT_ACTION = 'cart'; // <-- [BARU]
+        const idProduk=this.getAttribute('data-produk');
+        const harga=this.getAttribute('data-harga') || '0' ;
+        const namaProduk=this.closest('article')?.querySelector('h5')?.innerText || '' ;
+        bukaModalTanggal(idProduk, namaProduk, harga);
         });
-      });
-    });
+        });
 
-    // 🗓️ Format tanggal yyyy-mm-dd → dd-mm-yyyy
-    function formatTanggal(tanggal) {
-      if (!tanggal) return '';
-      const [tahun, bulan, hari] = tanggal.split('-');
-      return `${hari}-${bulan}-${tahun}`;
-    }
+        // 3b) Klik TOMBOL BELI -> mode 'buy'
+        document.querySelectorAll('.btn-tanggal').forEach(btn => {
+        btn.addEventListener('click', function () {
+        if (!IS_LOGGED_IN) { window.location = LOGIN_URL; return; }
+        CURRENT_ACTION = 'buy'; // <-- [BARU]
+          const idProduk=this.getAttribute('data-produk');
+          const harga=this.getAttribute('data-harga') || '0' ;
+          const namaProduk=this.closest('article')?.querySelector('h5')?.innerText || '' ;
+          bukaModalTanggal(idProduk, namaProduk, harga);
+          });
+          });
+          });
 
-    async function cekStok() {
-      const mulaiRaw = document.getElementById('tanggalMulaiSewa').value;
-      const pengembalianRaw = document.getElementById('tanggalPengembalian').value;
-      const jumlah = Number(document.getElementById('jumlahSewa').value || 1);
-      const info = document.getElementById('stokInfo');
 
-      if (!mulaiRaw || !pengembalianRaw) {
-        info.innerHTML = `<div class="text-danger fw-semibold">Pilih kedua tanggal terlebih dahulu.</div>`;
-        return;
-      }
-      if (toDateUTC(pengembalianRaw) <= toDateUTC(mulaiRaw)) {
-        info.innerHTML = `<div class="text-danger fw-semibold">
-    Tanggal pengembalian harus setelah tanggal sewa (minimal H+1).
-  </div>`;
-        return;
-      }
+          // 🗓️ Format tanggal yyyy-mm-dd → dd-mm-yyyy
+          function formatTanggal(tanggal) {
+          if (!tanggal) return '' ;
+          const [tahun, bulan, hari]=tanggal.split('-');
+          return `${hari}-${bulan}-${tahun}`;
+          }
 
-      try {
-        const res = await fetch(`/produk/${currentProdukId}/stok-tersedia`, {
-          method: 'POST',
-          headers: {
+          async function cekStok() {
+          const mulaiRaw=document.getElementById('tanggalMulaiSewa').value;
+          const pengembalianRaw=document.getElementById('tanggalPengembalian').value;
+          const jumlah=Number(document.getElementById('jumlahSewa').value || 1);
+          const info=document.getElementById('stokInfo');
+
+          if (!mulaiRaw || !pengembalianRaw) {
+          info.innerHTML=`<div class="text-danger fw-semibold">Pilih kedua tanggal terlebih dahulu.</div>`;
+          return;
+          }
+          if (toDateUTC(pengembalianRaw) <= toDateUTC(mulaiRaw)) {
+            info.innerHTML=`<div class="text-danger fw-semibold">
+            Tanggal pengembalian harus setelah tanggal sewa (minimal H+1).
+            </div>`;
+            return;
+            }
+
+            try {
+            const res = await fetch(`/produk/${currentProdukId}/stok-tersedia`, {
+            method: 'POST',
+            headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          },
-          body: JSON.stringify({
+            },
+            body: JSON.stringify({
             tanggal_mulai: mulaiRaw,
             tanggal_pengembalian: pengembalianRaw,
             jumlah: jumlah
-          })
-        });
+            })
+            });
 
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.message || 'Gagal cek stok');
-        }
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Gagal cek stok');
+            }
 
-        const durasiHari = hitungDurasiHari(mulaiRaw, pengembalianRaw);
-        const mulai = formatTanggal(mulaiRaw);
-        const pengembalian = formatTanggal(pengembalianRaw);
+            const durasiHari = hitungDurasiHari(mulaiRaw, pengembalianRaw);
+            const mulai = formatTanggal(mulaiRaw);
+            const pengembalian = formatTanggal(pengembalianRaw);
 
-        if (data.bisa_dipesan) {
-          info.innerHTML = `
-        <div class="alert alert-success py-2">
-          Stok tersedia (${data.stok_tersedia}) untuk <strong>${mulai}</strong> s/d <strong>${pengembalian}</strong><br>
-          Lama sewa: <strong>${durasiHari} hari</strong>
-        </div>
-        <button class="btn mt-2" style="background-color:#751A25; color:white;"
-          onclick="tambahKeKeranjang('${currentProdukId}', '${mulaiRaw}', '${pengembalianRaw}', ${jumlah}, ${durasiHari})">
-          Tambah ke Keranjang
-        </button>`;
-        } else {
-          info.innerHTML = `
-        <div class="alert alert-danger py-2">
-          Maaf, stok tidak mencukupi. Tersedia: <strong>${data.stok_tersedia}</strong>.
-        </div>`;
-        }
-      } catch (e) {
-        info.innerHTML = `<div class="alert alert-danger py-2">Terjadi kesalahan saat cek stok.</div>`;
-      }
-    }
+            if (data.bisa_dipesan) {
+            const btnHTML = (CURRENT_ACTION === 'buy')
+            // Saat mode 'buy' → langsung ajak ke halaman Pemesanan:
+            ? `<button class="btn mt-2" style="background-color:#751A25; color:white;"
+              onclick="redirectToPemesanan('${currentProdukId}', '${mulaiRaw}', '${pengembalianRaw}', ${jumlah})">
+              Lanjut ke Pemesanan
+            </button>`
+            // Saat mode 'cart' → masukkan ke keranjang:
+            : `<button class="btn mt-2" style="background-color:#751A25; color:white;"
+              onclick="tambahKeKeranjang('${currentProdukId}', '${mulaiRaw}', '${pengembalianRaw}', ${jumlah}, ${durasiHari})">
+              Tambah ke Keranjang
+            </button>`;
 
-    function tambahKeKeranjang(idProduk, mulaiRaw, pengembalianRaw, jumlah, durasiHari) {
-      const mulaiIndo = formatTanggal(mulaiRaw);
-      const pengembalianIndo = formatTanggal(pengembalianRaw);
-      const total = currentHargaSatuan * Number(durasiHari) * Number(jumlah || 1);
+            info.innerHTML = `
+            <div class="alert alert-success py-2">
+              Stok tersedia (${data.stok_tersedia}) untuk <strong>${mulai}</strong> s/d <strong>${pengembalian}</strong><br>
+              Lama sewa: <strong>${durasiHari} hari</strong>
+            </div>
+            ${btnHTML}
+            `;
+            } else {
+            info.innerHTML = `
+            <div class="alert alert-danger py-2">
+              Maaf, stok tidak mencukupi. Tersedia: <strong>${data.stok_tersedia}</strong>.
+            </div>`;
+            }
 
-      fetch(`/keranjang/tambah/${idProduk}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify({
-            tanggal_mulai: mulaiRaw,
-            tanggal_pengembalian: pengembalianRaw,
-            jumlah: jumlah,
-            lama_hari: durasiHari // << kirim ke server untuk validasi & hitung ulang
-          })
-        })
-        .then(async (res) => {
-          if (res.redirected) {
-            window.location = res.url;
+            } catch (e) {
+            info.innerHTML = `<div class="alert alert-danger py-2">Terjadi kesalahan saat cek stok.</div>`;
+            }
+            }
+            function redirectToPemesanan(idProduk, mulaiRaw, pengembalianRaw, jumlah) {
+            if (!mulaiRaw || !pengembalianRaw || !jumlah) {
+            alert('Lengkapi tanggal sewa, pengembalian, dan jumlah.');
             return;
-          }
-          if (res.status === 401 || res.status === 419) {
-            window.location = LOGIN_URL;
-            return;
-          }
+            }
 
-          const text = await res.text();
-          let data = {};
-          try {
-            data = JSON.parse(text);
-          } catch (_) {}
+            const base = `{{ url('/pemesanan') }}`;
+            const url = `${base}/${encodeURIComponent(idProduk)}`
+            + `?tanggal_mulai_sewa=${encodeURIComponent(mulaiRaw)}`
+            + `&tanggal_pengembalian=${encodeURIComponent(pengembalianRaw)}`
+            + `&jumlah=${encodeURIComponent(jumlah)}`;
 
-          if (!res.ok || data.success !== true) {
-            throw new Error(data.message || 'Gagal menambahkan ke keranjang.');
-          }
+            const modal = bootstrap.Modal.getInstance(document.getElementById('calendarModal'));
+            if (modal) modal.hide();
+            window.location.href = url; // <-- langsung ke halaman pemesanan
+              }
 
-          // sukses
-          bootstrap.Modal.getInstance(document.getElementById('calendarModal')).hide();
-          new bootstrap.Modal(document.getElementById('successModal')).show();
-          document.getElementById('successText').innerHTML =
-            `Sewa <strong>${currentProdukNama}</strong> dari <strong>${mulaiIndo}</strong> sampai <strong>${pengembalianIndo}</strong><br>
-         Lama sewa <strong>${durasiHari} hari</strong>`;
 
-          // update badge
-          if (data.count != null) {
-            const badge = document.getElementById('cart-badge');
-            if (badge) {
+              function tambahKeKeranjang(idProduk, mulaiRaw, pengembalianRaw, jumlah, durasiHari) {
+              const mulaiIndo=formatTanggal(mulaiRaw);
+              const pengembalianIndo=formatTanggal(pengembalianRaw);
+              const total=currentHargaSatuan * Number(durasiHari) * Number(jumlah || 1);
+
+              fetch(`/keranjang/tambah/${idProduk}`, {
+              method: 'POST' ,
+              headers: { 'Content-Type' : 'application/json' , 'Accept' : 'application/json' , 'X-CSRF-TOKEN' : '{{ csrf_token() }}'
+              },
+              credentials: 'same-origin' ,
+              body: JSON.stringify({
+              tanggal_mulai: mulaiRaw,
+              tanggal_pengembalian: pengembalianRaw,
+              jumlah: jumlah,
+              lama_hari: durasiHari // << kirim ke server untuk validasi & hitung ulang
+              })
+              })
+              .then(async (res)=> {
+              if (res.redirected) {
+              window.location = res.url;
+              return;
+              }
+              if (res.status === 401 || res.status === 419) {
+              window.location = LOGIN_URL;
+              return;
+              }
+
+              const text = await res.text();
+              let data = {};
+              try {
+              data = JSON.parse(text);
+              } catch (_) {}
+
+              if (!res.ok || data.success !== true) {
+              throw new Error(data.message || 'Gagal menambahkan ke keranjang.');
+              }
+
+              // sukses
+              const calModal = bootstrap.Modal.getInstance(document.getElementById('calendarModal'));
+              if (calModal) calModal.hide();
+              window.location.href = KERANJANG_URL; // langsung ke halaman keranjang
+
+
+              // update badge
+              if (data.count != null) {
+              const badge = document.getElementById('cart-badge');
+              if (badge) {
               badge.textContent = data.count;
               badge.style.display = Number(data.count) > 0 ? 'inline-block' : 'none';
-            }
-          }
-        })
-        .catch(() => alert('Terjadi kesalahan saat menambahkan ke keranjang.'));
-    }
-  </script>
+              }
+              }
+              })
+              .catch(() => alert('Terjadi kesalahan saat menambahkan ke keranjang.'));
+              }
+              </script>
 </body>
 
 </html>

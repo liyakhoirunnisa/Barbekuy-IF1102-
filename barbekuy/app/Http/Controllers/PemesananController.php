@@ -68,67 +68,56 @@ class PemesananController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_produk'             => 'required|exists:produk,id_produk',
-            'tanggal_mulai_sewa'    => 'required|date',
-            'tanggal_pengembalian'  => 'required|date',
-            'metode_pembayaran'     => 'required|string',
-            'pesan'                 => 'nullable|string|max:255',
-            'ktp'                   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'nama_penerima'         => 'required|string|max:255',
-            'jumlah_sewa'           => 'required|integer|min:1',
-            'lokasi_pengambilan'    => 'required|string',
+            'id_produk'            => 'required|exists:produk,id_produk',
+            'tanggal_sewa'         => 'required|date',
+            'tanggal_pengembalian' => 'required|date|after_or_equal:tanggal_sewa',
+            'nama_penerima'        => 'required|string|max:100',
+            'jumlah_sewa'          => 'required|integer|min:1',
+            'catatan_tambahan'     => 'nullable|string|max:255',
         ]);
 
-        if (Carbon::parse($validated['tanggal_pengembalian'])
-            ->lt(Carbon::parse($validated['tanggal_mulai_sewa']))
-        ) {
+        $mulai  = Carbon::parse($validated['tanggal_sewa']);
+        $akhir  = Carbon::parse($validated['tanggal_pengembalian']);
+        $durasi = max(1, $mulai->diffInDays($akhir));
+
+        $produk       = Produk::findOrFail($validated['id_produk']);
+        $hargaSatuan  = (int) $produk->harga;
+        $subtotal     = $hargaSatuan * (int)$validated['jumlah_sewa'] * $durasi;
+
+        DB::beginTransaction();
+        try {
+            // Header (no_pesanan otomatis dari Model)
+            $p = Pemesanan::create([
+                'id_user'             => Auth::id(),
+                'nama_penerima'       => $validated['nama_penerima'],
+                'tanggal_sewa'        => $mulai->toDateString(),
+                'tanggal_pengembalian' => $akhir->toDateString(),
+                'total_harga'         => $subtotal,                 // tanpa biaya_layanan sesuai skema baru
+                'catatan_tambahan'    => $validated['catatan_tambahan'] ?? null,
+                'status_pesanan'      => 'Belum Bayar',
+            ]);
+
+            // Detail
+            DetailPemesanan::create([
+                'id_pesanan'   => $p->id_pesanan,
+                'id_produk'    => $produk->id_produk,
+                'jumlah_sewa'  => (int)$validated['jumlah_sewa'],
+                'durasi_hari'  => $durasi,
+                'harga_satuan' => $hargaSatuan,
+                'subtotal'     => $subtotal,
+            ]);
+
+            DB::commit();
             return response()->json([
-                'success' => false,
-                'message' => 'Tanggal pengembalian tidak boleh sebelum tanggal mulai.',
-            ], 400);
+                'success'   => true,
+                'message'   => 'Pesanan berhasil dibuat!',
+                'no_pesanan' => $p->no_pesanan,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Gagal membuat pesanan'], 500);
         }
-
-        // nomor pesanan
-        $last = Pemesanan::orderBy('id_pesanan', 'desc')->first();
-        $noPesanan = 'PSN' . str_pad($last ? ((int) str_replace('PSN', '', $last->no_pesanan) + 1) : 1, 4, '0', STR_PAD_LEFT);
-
-        $durasi = max(1, Carbon::parse($validated['tanggal_mulai_sewa'])
-            ->diffInDays(Carbon::parse($validated['tanggal_pengembalian'])));
-
-        $produk = Produk::findOrFail($validated['id_produk']);
-        $hargaPerHari = (int) $produk->harga;
-        $subtotalProduk = $hargaPerHari * (int)$validated['jumlah_sewa'] * $durasi;
-        $biayaLayanan  = 1000;
-        $totalHarga    = $subtotalProduk + $biayaLayanan;
-
-        $ktpPath = $request->hasFile('ktp')
-            ? $request->file('ktp')->store('ktp', 'public')
-            : null;
-
-        $pemesanan = Pemesanan::create([
-            'id_user'                    => Auth::id(),
-            'no_pesanan'                 => $noPesanan,
-            'id_produk'                  => $validated['id_produk'], // fallback single item
-            'jumlah_sewa'                => (int)$validated['jumlah_sewa'],
-            'durasi_hari'                => $durasi,
-            'tanggal_mulai_sewa'         => $validated['tanggal_mulai_sewa'],
-            'tanggal_pengembalian_sewa'  => $validated['tanggal_pengembalian'],
-            'subtotal_produk'            => $subtotalProduk,
-            'biaya_layanan'              => $biayaLayanan,
-            'total_harga'                => $totalHarga,
-            'nama_penerima'              => $validated['nama_penerima'],
-            'catatan'                    => $validated['pesan'] ?? null,
-            'metode_pembayaran'          => $validated['metode_pembayaran'],
-            'lokasi_pengambilan'         => $validated['lokasi_pengambilan'],
-            'foto_ktp'                   => $ktpPath,
-            'status_pesanan'             => 'Menunggu Konfirmasi',
-        ]);
-
-        return response()->json([
-            'success'   => true,
-            'message'   => 'Pesanan berhasil dibuat!',
-            'pemesanan' => $pemesanan,
-        ]);
     }
 
     public function prepare(Request $request)
@@ -208,57 +197,46 @@ class PemesananController extends Controller
     public function confirm(Request $request)
     {
         $validated = $request->validate([
-            'items'                                => 'required|array|min:1',
-            'items.*.id_produk'                    => 'required|exists:produk,id_produk',
-            'items.*.jumlah'                       => 'required|integer|min:1',
-            'items.*.mulai'                        => 'required|date',
-            'items.*.akhir'                        => 'required|date|after_or_equal:items.*.mulai',
-            'nama_penerima'                        => 'required|string|max:255',
-            'metode_pembayaran'                    => 'required|string',
-            'lokasi_pengambilan'                   => 'required|string',
-            'catatan'                              => 'nullable|string|max:255',
-            'foto_ktp'                             => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'items'               => 'required|array|min:1',
+            'items.*.id_produk'   => 'required|exists:produk,id_produk',
+            'items.*.jumlah'      => 'required|integer|min:1',
+            'items.*.mulai'       => 'required|date',
+            'items.*.akhir'       => 'required|date|after_or_equal:items.*.mulai',
+            'nama_penerima'       => 'required|string|max:100',
+            'catatan_tambahan'    => 'nullable|string|max:255',
         ]);
 
-        // nomor pesanan
-        $last = Pemesanan::orderBy('id_pesanan', 'desc')->first();
-        $noPesanan = 'PSN' . str_pad($last ? ((int) str_replace('PSN', '', $last->no_pesanan) + 1) : 1, 4, '0', STR_PAD_LEFT);
-
-        $subtotalProduk = 0;
-        $biayaLayanan  = 1000;
+        $subtotalAll = 0;
 
         DB::beginTransaction();
         try {
-            $pemesanan = Pemesanan::create([
-                'id_user'                    => auth()->id(),
-                'no_pesanan'                 => $noPesanan,
-                'subtotal_produk'            => 0,
-                'biaya_layanan'              => $biayaLayanan,
-                'total_harga'                => 0,
-                'tanggal_mulai_sewa'         => Carbon::parse($validated['items'][0]['mulai']),
-                'tanggal_pengembalian_sewa'  => Carbon::parse($validated['items'][0]['akhir']),
-                'nama_penerima'              => $validated['nama_penerima'],
-                'metode_pembayaran'          => $validated['metode_pembayaran'],
-                'lokasi_pengambilan'         => $validated['lokasi_pengambilan'],
-                'catatan'                    => $validated['catatan'] ?? null,
-                'foto_ktp'                   => $request->hasFile('foto_ktp')
-                    ? $request->file('foto_ktp')->store('ktp', 'public')
-                    : null,
-                'status_pesanan'             => 'Menunggu Konfirmasi',
+            // Ambil ringkasan tanggal dari item pertama
+            $mulai = Carbon::parse($validated['items'][0]['mulai']);
+            $akhir = Carbon::parse($validated['items'][0]['akhir']);
+
+            // Header (no_pesanan otomatis)
+            $p = Pemesanan::create([
+                'id_user'              => auth()->id(),
+                'nama_penerima'        => $validated['nama_penerima'],
+                'tanggal_sewa'         => $mulai->toDateString(),
+                'tanggal_pengembalian' => $akhir->toDateString(),
+                'total_harga'          => 0, // isi setelah loop
+                'catatan_tambahan'     => $validated['catatan_tambahan'] ?? null,
+                'status_pesanan'       => 'Belum Bayar',
             ]);
 
             foreach ($validated['items'] as $it) {
                 $produk = Produk::findOrFail($it['id_produk']);
-                $mulai  = Carbon::parse($it['mulai']);
-                $akhir  = Carbon::parse($it['akhir']);
-                $durasi = max(1, $mulai->diffInDays($akhir));
+                $m = Carbon::parse($it['mulai']);
+                $a = Carbon::parse($it['akhir']);
+                $durasi = max(1, $m->diffInDays($a));
 
-                $harga    = (int)$produk->harga;
-                $jumlah   = (int)$it['jumlah'];
+                $harga   = (int) $produk->harga;
+                $jumlah  = (int) $it['jumlah'];
                 $subtotal = $harga * $jumlah * $durasi;
 
                 DetailPemesanan::create([
-                    'id_pesanan'   => $pemesanan->id_pesanan,
+                    'id_pesanan'   => $p->id_pesanan,
                     'id_produk'    => $produk->id_produk,
                     'jumlah_sewa'  => $jumlah,
                     'durasi_hari'  => $durasi,
@@ -266,19 +244,17 @@ class PemesananController extends Controller
                     'subtotal'     => $subtotal,
                 ]);
 
-                $subtotalProduk += $subtotal;
+                $subtotalAll += $subtotal;
             }
 
-            $pemesanan->update([
-                'subtotal_produk' => $subtotalProduk,
-                'total_harga'     => $subtotalProduk + $biayaLayanan,
-            ]);
+            $p->update(['total_harga' => $subtotalAll]);
 
             // beresin session checkout
             $request->session()->forget('checkout_items');
 
             DB::commit();
-            return redirect()->route('riwayat.semua')->with('success', "Pesanan {$noPesanan} berhasil dibuat.");
+            return redirect()->route('riwayat.semua')
+                ->with('success', "Pesanan {$p->no_pesanan} berhasil dibuat.");
         } catch (\Throwable $e) {
             DB::rollBack();
             report($e);
@@ -288,95 +264,78 @@ class PemesananController extends Controller
 
     public function storeInvoice(Request $request)
     {
-        // 1) Validasi minimal: hanya items
         $validated = $request->validate([
             'items'                              => 'required|array|min:1',
             'items.*.id_produk'                  => 'required|exists:produk,id_produk',
             'items.*.tanggal_mulai_sewa'         => 'required|date',
-            'items.*.tanggal_pengembalian'       => 'required|date',
+            'items.*.tanggal_pengembalian'       => 'required|date|after_or_equal:items.*.tanggal_mulai_sewa',
             'items.*.jumlah_sewa'                => 'required|integer|min:1',
-            // Field berikut TIDAK wajib (akan diisi di halaman pemesanan/checkout)
-            'nama_penerima'                      => 'nullable|string|max:255',
-            'metode_pembayaran'                  => 'nullable|string',
-            'lokasi_pengambilan'                 => 'nullable|string',
-            'pesan'                              => 'nullable|string|max:255',
+            'nama_penerima'                      => 'nullable|string|max:100',
+            'catatan_tambahan'                   => 'nullable|string|max:255',
         ]);
 
-        // 2) Generate nomor pesanan
-        $last = Pemesanan::orderBy('id_pesanan', 'desc')->first();
-        $noPesanan = 'PSN' . str_pad($last ? ((int) str_replace('PSN', '', $last->no_pesanan) + 1) : 1, 4, '0', STR_PAD_LEFT);
+        $subtotalAll = 0;
+        $detailRows  = [];
 
-        // 3) Hitung subtotal per item
-        $subtotalProduk = 0;
-        $detailData = [];
+        foreach ($validated['items'] as $it) {
+            $mulai  = Carbon::parse($it['tanggal_mulai_sewa']);
+            $akhir  = Carbon::parse($it['tanggal_pengembalian']);
+            $durasi = max(1, $mulai->diffInDays($akhir));
 
-        foreach ($validated['items'] as $item) {
-            $mulai  = \Carbon\Carbon::parse($item['tanggal_mulai_sewa']);
-            $seles  = \Carbon\Carbon::parse($item['tanggal_pengembalian']);
-            $durasi = max(1, $mulai->diffInDays($seles));
-
-            $produk   = Produk::findOrFail($item['id_produk']);
-            $harga    = $produk->harga;
-            $jumlah   = (int) $item['jumlah_sewa'];
+            $produk   = Produk::findOrFail($it['id_produk']);
+            $harga    = (int) $produk->harga;
+            $jumlah   = (int) $it['jumlah_sewa'];
             $subtotal = $harga * $jumlah * $durasi;
 
-            $subtotalProduk += $subtotal;
-
-            $detailData[] = [
-                'id_produk'    => $produk->id_produk,
-                'jumlah_sewa'  => $jumlah,
-                'durasi_hari'  => $durasi,
-                'harga_satuan' => $harga,
-                'subtotal'     => $subtotal,
-            ];
+            $subtotalAll += $subtotal;
+            $detailRows[] = compact('produk', 'harga', 'jumlah', 'durasi', 'subtotal', 'mulai', 'akhir');
         }
 
-        $biayaLayanan = 1000;
-        $totalHarga   = $subtotalProduk + $biayaLayanan;
+        DB::beginTransaction();
+        try {
+            $firstMulai = $detailRows[0]['mulai']->toDateString();
+            $firstAkhir = $detailRows[0]['akhir']->toDateString();
 
-        // 4) Simpan header "draft" (nama penerima & lain-lain boleh null, diisi nanti)
-        $pemesanan = Pemesanan::create([
-            'id_user'                   => auth()->id(),
-            'no_pesanan'                => $noPesanan,
-            'subtotal_produk'           => $subtotalProduk,
-            'biaya_layanan'             => $biayaLayanan,
-            'total_harga'               => $totalHarga,
+            $p = Pemesanan::create([
+                'id_user'              => auth()->id(),
+                'nama_penerima'        => $validated['nama_penerima'] ?? '-',
+                'tanggal_sewa'         => $firstMulai,
+                'tanggal_pengembalian' => $firstAkhir,
+                'total_harga'          => $subtotalAll,
+                'catatan_tambahan'     => $validated['catatan_tambahan'] ?? null,
+                'status_pesanan'       => 'Belum Bayar', // atau 'Draft' kalau kamu perlukan
+            ]);
 
-            'nama_penerima'             => $validated['nama_penerima'] ?? null,
-            'catatan'                   => $validated['pesan'] ?? null,
-            'metode_pembayaran'         => $validated['metode_pembayaran'] ?? null,
-            'lokasi_pengambilan'        => $validated['lokasi_pengambilan'] ?? null,
+            foreach ($detailRows as $row) {
+                DetailPemesanan::create([
+                    'id_pesanan'   => $p->id_pesanan,
+                    'id_produk'    => $row['produk']->id_produk,
+                    'jumlah_sewa'  => $row['jumlah'],
+                    'durasi_hari'  => $row['durasi'],
+                    'harga_satuan' => $row['harga'],
+                    'subtotal'     => $row['subtotal'],
+                ]);
+            }
 
-            // ambil tanggal pertama sebagai ringkasan header (opsional)
-            'tanggal_mulai_sewa'        => \Carbon\Carbon::parse($validated['items'][0]['tanggal_mulai_sewa']),
-            'tanggal_pengembalian_sewa' => \Carbon\Carbon::parse($validated['items'][0]['tanggal_pengembalian']),
-
-            'status_pesanan'            => 'Draft', // nanti berubah saat user submit di halaman pemesanan
-        ]);
-
-        // 5) Simpan detail
-        foreach ($detailData as $detail) {
-            DetailPemesanan::create(array_merge($detail, [
-                'id_pesanan' => $pemesanan->id_pesanan
-            ]));
+            DB::commit();
+            return response()->json([
+                'success'     => true,
+                'message'     => 'Draft pesanan dibuat.',
+                'no_pesanan'  => $p->no_pesanan,
+                'total'       => $p->total_harga,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Gagal membuat draft'], 500);
         }
-
-        return response()->json([
-            'success'     => true,
-            'message'     => 'Draft pesanan dibuat.',
-            'no_pesanan'  => $noPesanan,
-            'total'       => $totalHarga,
-            // kalau mau langsung arahkan ke halaman pengisian detail, kirimkan url:
-            // 'redirect' => route('riwayat.semua') // atau route('pemesanan.edit', $pemesanan->id_pesanan)
-        ]);
     }
 
     public function riwayat()
     {
-        // Ambil semua pesanan milik user yang sedang login
-        $pemesanan = \App\Models\Pemesanan::where('id_user', auth()->id())
+        $pemesanan = Pemesanan::where('id_user', auth()->id())
             ->orderByDesc('created_at')
-            ->with('detailPemesanan') // kalau kamu sudah buat relasi
+            ->with('details') // ⬅️ ganti dari detailPemesanan
             ->get();
 
         return view('riwayat', compact('pemesanan'));
