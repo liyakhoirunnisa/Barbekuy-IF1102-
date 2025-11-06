@@ -64,7 +64,21 @@
         <!-- Judul -->
         <h1 class="text-lg font-semibold">Pemesanan</h1>
     </header>
+    @if ($errors->any())
+    <div class="max-w-3xl mx-auto p-4 mt-4 rounded-lg bg-red-50 text-red-700">
+        <ul class="list-disc list-inside text-sm">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 
+    @if (session('error'))
+    <div class="max-w-3xl mx-auto p-4 mt-4 rounded-lg bg-red-50 text-red-700">
+        {{ session('error') }}
+    </div>
+    @endif
     <!-- Konten -->
     <main class="max-w-3xl mx-auto p-6 pt-4">
         <form id="formPemesanan" action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
@@ -90,9 +104,14 @@
                             <p>
                                 Tanggal sewa:
                                 {{ $tanggalMulaiSewa && $tanggalPengembalian
-                ? \Carbon\Carbon::parse($tanggalMulaiSewa)->translatedFormat('d F Y').' - '.\Carbon\Carbon::parse($tanggalPengembalian)->translatedFormat('d F Y')
-                : '-' }}
+      ? \Carbon\Carbon::parse($tanggalMulaiSewa)->translatedFormat('d F Y').' - '.\Carbon\Carbon::parse($tanggalPengembalian)->translatedFormat('d F Y')
+      : '-' }}
                             </p>
+                        </div>
+
+                        <div class="flex items-center gap-1 text-gray-500 text-sm mt-1">
+                            <span class="iconify" data-icon="mdi:clock-outline"></span>
+                            <p>Durasi {{ (int)($durasi ?? 1) }} hari</p>
                         </div>
                     </div>
 
@@ -176,9 +195,10 @@
                         <span class="iconify" data-icon="mdi:message-text-outline"></span>
                         Tinggalkan Pesan
                     </button>
-                    <textarea id="pesanTextarea" name="catatan"
-                        class="hidden w-full border border-gray-300 rounded-lg mt-2 p-2 text-sm text-gray-700 focus:bg-white focus:ring-[#7B0D1E] focus:border-[#7B0D1E]"
-                        placeholder="Contoh: Akan saya ambil siang"></textarea>
+                    <textarea id="pesanTextarea" name="catatan_tambahan"
+                        class="hidden w-full border border-gray-300 rounded-lg mt-2 p-2 text-sm text-gray-700
+         focus:bg-white focus:ring-[#7B0D1E] focus:border-[#7B0D1E]"
+                        placeholder="Tambahkan catatan (opsional)"></textarea>
                 </div>
             </div>
 
@@ -228,7 +248,7 @@
 
                     <label class="bg-[#7B0D1E] text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-[#5d0a17] transition">
                         Pilih File
-                        <input id="fileInput" type="file" name="ktp" class="hidden" accept=".png,.jpg,.jpeg">
+                        <input id="fileInput" type="file" name="ktp" class="hidden" accept=".png,.jpg,.jpeg" required>
                     </label>
                 </div>
 
@@ -436,41 +456,6 @@
                 alert('Silakan upload foto KTP terlebih dahulu.');
             }
         });
-
-
-        // === Kirim data pemesanan ===
-        function lanjutPemesanan(idProduk, tanggalMulaiSewa, tanggalPengembalian) {
-            const formData = new FormData();
-            formData.append('id_produk', idProduk);
-            formData.append('tanggal_mulai_sewa', tanggalMulaiSewa);
-            formData.append('tanggal_pengembalian', tanggalPengembalian);
-            formData.append('lokasi_pengambilan', 'Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125');
-
-            if (fileInput.files[0]) {
-                formData.append('ktp', fileInput.files[0]);
-            }
-
-            fetch("{{ route('pemesanan.store') }}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    },
-                    body: formData,
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                        successModal.show();
-                    } else {
-                        alert("Gagal menyimpan pesanan.");
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert("Terjadi kesalahan server.");
-                });
-        }
 
         // Auto-preview jika file masih ada saat reload/back navigation
         if (fileInput.files && fileInput.files[0]) {

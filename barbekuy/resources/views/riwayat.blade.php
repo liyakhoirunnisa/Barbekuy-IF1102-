@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Riwayat Pemesanan</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
@@ -10,13 +11,13 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f9f9f9;
+            background: #f9f9f9;
             margin: 0;
         }
 
         header {
-            background-color: #7B001F;
-            color: white;
+            background: #7B001F;
+            color: #fff;
             padding: 1.2rem 2rem;
             text-align: center;
             font-weight: 600;
@@ -31,7 +32,7 @@
         .tabs {
             display: flex;
             justify-content: space-around;
-            background-color: white;
+            background: #fff;
             padding: 1rem 0;
             border-bottom: 1px solid #ddd;
             position: fixed;
@@ -41,44 +42,141 @@
             z-index: 999;
         }
 
-        .tabs a { color: #000; text-decoration: none; font-weight: 500; }
-        .tabs a.active { color: #7B001F; border-bottom: 2px solid #7B001F; padding-bottom: 5px; }
-
-        .content { margin-top: 150px; }
-
-        .order-card {
-            background-color: white;
-            margin: 1.5rem;
-            padding: 1rem 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        .tabs button {
+            background: none;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            color: #000;
+            padding-bottom: 6px;
         }
 
-        .order-header { display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#777; }
-        .order-header-left { display:flex; align-items:center; }
-        .order-header-left .iconify { color:#7B001F; margin-right:8px; font-size:18px; }
-        .status { font-weight:600; color:#7B001F; }
+        .tabs button.active {
+            color: #7B001F;
+            border-bottom: 2px solid #7B001F;
+        }
 
-        .product { display:flex; align-items:center; margin-top:1rem; }
-        .product img { width:80px; height:80px; border-radius:10px; object-fit:cover; margin-right:15px; }
-        .product-info { flex:1; }
-        .product-info h4 { font-size:15px; margin:0; }
-        .product-info p { font-size:13px; color:#888; }
+        .container {
+            max-width: 980px;
+            margin: 150px auto 40px;
+            padding: 0 16px;
+        }
 
-        .price { text-align:left; font-weight:500; font-size:13px; color:#333; }
+        .alert {
+            max-width: 980px;
+            margin: 110px auto 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .alert-success {
+            background: #eaf8ec;
+            color: #1d7a3d;
+            border: 1px solid #cbeed3;
+        }
+
+        .alert-danger {
+            background: #fdeaea;
+            color: #9b1c1c;
+            border: 1px solid #f5c2c2;
+        }
+
+        .order-card {
+            background: #fff;
+            margin: 1rem 0;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #777;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .order-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .order-header-left .iconify {
+            color: #7B001F;
+            font-size: 18px;
+        }
+
+        .status {
+            font-weight: 600;
+            color: #7B001F;
+        }
+
+        .product {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .product img {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-right: 15px;
+            background: #fafafa;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-info h4 {
+            font-size: 15px;
+            margin: 0;
+            color: #222;
+        }
+
+        .product-info p {
+            font-size: 13px;
+            color: #888;
+            margin: .2rem 0 0;
+        }
+
+        .price {
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            color: #333;
+            white-space: nowrap;
+        }
 
         .total {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin-top: 12px;   /* jarak atas */
-            margin-bottom: 12px; /* jarak bawah */
+            margin: 12px 0;
         }
 
-        .total span { font-size:12px; color:#777; }
-        .total strong { font-size:16px; color:#000; font-weight:700; }
+        .total span {
+            font-size: 12px;
+            color: #777;
+        }
 
-        /* ====== TOMBOL DI HALAMAN & MODAL ====== */
+        .total strong {
+            font-size: 16px;
+            color: #000;
+            font-weight: 700;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
 
         .buttons button {
             border-radius: 8px;
@@ -87,490 +185,360 @@
             font-weight: 500;
         }
 
-        /* 🔴 Tombol utama (merah) */
         .btn-primary {
-            background-color: #7B001F;
+            background: #7B001F;
             border: 1px solid #7B001F;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #68011bff;
-            color: #FFFFFF;
-            border-color: #7B001F;
+            color: #fff;
         }
 
-        /* ⚪ Tombol sekunder (putih) */
+        .btn-primary:hover {
+            background: #68011b;
+        }
+
         .btn-secondary {
-            background-color: #fff;
+            background: #fff;
             border: 1.5px solid #ccc;
             color: #444;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
         }
+
         .btn-secondary:hover {
             border-color: #7B001F;
             color: #7B001F;
         }
 
-        /* 🎯 Efek klik (active state) */
-        .btn-primary:active,
-        .btn-secondary:active {
-            opacity: 0.9;
-        }
-
-        /* 🟣 Tombol di dalam modal */
-        .modal-btn {
-            border-radius: 8px;
-            padding: 10px 16px;
-            cursor: pointer;
-        }
-
-        .modal-btn.primary {
-            background: #7B001F;
-            color: #fff;
-        }
-        .modal-btn.primary:hover {
-            background: #68011bff;
-            color: #FFFFFF;
-            border: 1.5px solid #7B001F;
-        }
-
-        .modal-btn.ghost {
-            background: #fff;
-            border: 1.5px solid #ddd;
-            color: #333;
-        }
-        .modal-btn.ghost:hover {
-            border-color: #7B001F;
-            color: #7B001F;
-        }
-
-        /* ======== Modal (Popup) ======== */
-        [id^="detailModal"] {
-            position: fixed;               /* biar nempel di layar, bukan di bawah halaman */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;                 /* default: disembunyikan */
+        /* modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
             justify-content: center;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.6);  /* efek gelap di belakang */
-            z-index: 9999;                 /* biar tampil di atas elemen lain */
+            background: rgba(0, 0, 0, .6);
+            z-index: 9999;
         }
 
-        /* Isi kotak popup */
         .modal-card {
-            background-color: #fff;
+            background: #fff;
             padding: 20px;
             border-radius: 16px;
             width: 90%;
             max-width: 960px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            animation: fadeIn 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, .3);
+            animation: fadeIn .25s ease;
         }
 
-        .modal-card h3 { font-weight:600; text-align:left; margin:0 0 12px 0; color:#7B001F; }
+        .order-header-popup {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
 
-        .order-header-popup { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:12px; }
-        .order-date { color:#555; font-size:14px; }
-        .order-id { color:#7B001F; font-weight:600; font-size:14px; }
+        .order-date {
+            color: #555;
+            font-size: 14px;
+        }
 
-        .modal-product { display:flex; gap:18px; align-items:center; margin-top:10px; }
-        .modal-product img { width:110px; height:110px; border-radius:10px; object-fit:cover; }
-        .modal-product .info h4 { margin:0; font-size:16px; font-weight:600; }
-        .modal-product .info p { margin:6px 0 0 0; color:#666; font-size:13px; }
+        .order-id {
+            color: #7B001F;
+            font-weight: 600;
+            font-size: 14px;
+        }
 
-        .modal-section { margin-top:18px; border-top:1px solid #eee; padding-top:12px; }
-        .modal-section .label { font-weight:600; color:#333; margin-bottom:8px; }
-        .modal-section p { margin:6px 0; color:#555; font-size:13px; }
+        .modal-product {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            margin-top: 10px;
+        }
 
-        .modal-actions { display:flex; justify-content:flex-start; gap:10px; margin-top:18px; flex-wrap:wrap; }
-        .modal-btn { border-radius:8px; padding:10px 16px; cursor:pointer; border:none; }
-        .modal-btn.primary { background:#7B001F; color:#fff; }
-        .modal-btn.ghost { background:#fff; border:1px solid #ddd; color:#333; }
+        .modal-product img {
+            width: 110px;
+            height: 110px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #fafafa;
+        }
 
-        @keyframes fadeIn { from { opacity:0; transform:scale(.98);} to{ opacity:1; transform:scale(1);} }
+        .modal-product .info h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #222;
+        }
 
-        @media (max-width:640px) {
-            .modal-product img { width:88px; height:88px; }
-            .modal-card { padding:18px; }
+        .modal-product .info p {
+            margin: 6px 0 0;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .modal-section {
+            margin-top: 18px;
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        .modal-section .label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .modal-section p {
+            margin: 6px 0;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .modal-btn.primary {
+            background: #7B001F;
+            color: #fff;
+        }
+
+        .modal-btn.ghost {
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .muted {
+            color: #888;
+            font-size: 12px;
         }
     </style>
 </head>
+
 <body>
+
     <header>Riwayat Pemesanan</header>
 
-    {{-- Navbar --}}
-    <div class="tabs">
-        <a href="/riwayatSemua" class="{{ request()->is('riwayatSemua') ? 'active' : '' }}">Semua</a>
-        <a href="/riwayatProses" class="{{ request()->is('riwayatProses') ? 'active' : '' }}">Sedang Proses</a>
-        <a href="/riwayatSiap" class="{{ request()->is('riwayatSiap') ? 'active' : '' }}">Disiapkan</a>
-        <a href="/riwayatSewa" class="{{ request()->is('riwayatSewa') ? 'active' : '' }}">Disewa</a>
-        <a href="/riwayatSelesai" class="{{ request()->is('riwayatSelesai') ? 'active' : '' }}">Selesai</a>
-        <a href="/riwayatBatal" class="{{ request()->is('riwayatBatal') ? 'active' : '' }}">Dibatalkan</a>
+    {{-- Flash message --}}
+    @if (session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    {{-- Tabs filter (client-side) --}}
+    <div class="tabs" role="tablist" aria-label="Filter status">
+        <button type="button" class="active" data-filter="all">Semua</button>
+        <button type="button" data-filter="Belum Bayar">Belum Bayar</button>
+        <button type="button" data-filter="Menunggu Konfirmasi">Sedang Proses</button>
+        <button type="button" data-filter="Disiapkan">Disiapkan</button>
+        <button type="button" data-filter="Disewa">Disewa</button>
+        <button type="button" data-filter="Selesai">Selesai</button>
+        <button type="button" data-filter="Dibatalkan">Dibatalkan</button>
     </div>
 
-    <div class="content">
-        <!-- ✅ Kartu 1 (Sedang Proses) -->
-        <div class="order-card">
+    <div class="container" id="ordersContainer">
+        @forelse ($pemesanan as $order)
+        @php
+        $status = $order->status_pesanan ?? '-';
+        $mulai = \Carbon\Carbon::parse($order->tanggal_sewa)->translatedFormat('d F Y');
+        $akhir = \Carbon\Carbon::parse($order->tanggal_pengembalian)->translatedFormat('d F Y');
+        $totalQty = $order->details->sum('jumlah_sewa');
+        $modalId = 'detailModal_'.$order->id_pesanan;
+        @endphp
+
+        <div class="order-card order-item" data-status="{{ $status }}">
             <div class="order-header">
                 <div class="order-header-left">
                     <span class="iconify" data-icon="mdi:calendar"></span>
-                    Tanggal 20–21 Oktober 2025
+                    <span>Tanggal {{ $mulai }} – {{ $akhir }}</span>
                 </div>
-                <div class="status">Diproses</div>
+                <div class="status">{{ $status }}</div>
             </div>
 
+            {{-- Daftar produk di header kartu (ringkas) --}}
+            @foreach ($order->details as $d)
+            @php
+            $p = $d->product;
+            $img = $p && $p->gambar
+            ? asset('storage/'.ltrim($p->gambar,'/'))
+            : asset('images/bbq.jpg'); // fallback lokal
+            @endphp
+
             <div class="product">
-                <img src="images/ber4extra.png" alt="Paket Slice Ber-4 Xtra">
+                <img src="{{ $img }}" alt="{{ $p->nama_produk ?? 'Produk' }}">
                 <div class="product-info">
-                    <h4>Paket Slice Ber-4 Xtra</h4>
-                    <p>x1</p>
+                    <h4>{{ $p->nama_produk ?? $d->id_produk }}</h4>
+                    <p>x{{ $d->jumlah_sewa }} • {{ $d->durasi_hari }} hari</p>
                 </div>
-                <div class="price">Rp245.000</div>
+                <div class="price">Rp{{ number_format($d->subtotal,0,',','.') }}</div>
             </div>
+            @endforeach
 
             <div class="total">
-                <span>Total 1 Produk</span>
-                <strong>Rp246.000</strong>
+                <span>Total {{ $totalQty }} Produk</span>
+                <strong>Rp{{ number_format($order->total_harga,0,',','.') }}</strong>
             </div>
 
-            <div class="buttons">
-                <button class="btn-secondary">Hubungi Kami</button>
-                <button class="btn-secondary" onclick="openDetailModal('detailModal1')">Lihat Rincian</button>
-            </div>
-        </div>
+            <div class="muted">NO. PESANAN: {{ $order->no_pesanan }}</div>
 
-        <!-- ✅ Kartu 2 (Disewa) -->
-        <div class="order-card">
-            <div class="order-header">
-                <div class="order-header-left">
-                    <span class="iconify" data-icon="mdi:calendar"></span>
-                    Tanggal 15–16 Oktober 2025
-                </div>
-                <div class="status">Disewa</div>
-            </div>
-
-            <div class="product">
-                <img src="images/bbq.jpg" alt="Paket Slice Ber-4 Xtra">
-                <div class="product-info">
-                    <h4>Paket Alat BBQ</h4>
-                    <p>x1</p>
-                </div>
-                <div class="price">Rp45.000</div>
-            </div>
-
-            <div class="total">
-                <span>Total 1 Produk</span>
-                <strong>Rp46.000</strong>
-            </div>
-
-            <div class="buttons">
-                <button class="btn-secondary">Hubungi Kami</button>
-                <button class="btn-secondary" onclick="openDetailModal('detailModal2')">Lihat Rincian</button>
-            </div>
-        </div>
-
-        <!-- ✅ Kartu 3 (Selesai) -->
-        <div class="order-card">
-            <div class="order-header">
-                <div class="order-header-left">
-                    <span class="iconify" data-icon="mdi:calendar"></span>
-                    Tanggal 6–7 Oktober 2025
-                </div>
-                <div class="status">Selesai</div>
-            </div>
-
-            <div class="product">
-                <img src="{{ asset('images/ber4extra.png') }}" alt="Paket Slice Ber-4 Xtra">
-                <div class="product-info">
-                    <h4>Paket Slice Ber-4 Xtra</h4>
-                    <p>x1</p>
-                </div>
-                <div class="price">Rp245.000</div>
-            </div>
-
-            <div class="product">
-                <img src="{{ asset('images/ber6extra.png') }}" alt="Paket Slice Ber-6 Xtra">
-                <div class="product-info">
-                    <h4>Paket Slice Ber-6 Xtra</h4>
-                    <p>x1</p>
-                </div>
-                <div class="price">Rp345.000</div>
-            </div>
-
-            <div class="total">
-                <span>Total 2 Produk</span>
-                <strong>Rp591.000</strong>
-            </div>
-
-            <div class="buttons">
+            <div class="buttons" style="margin-top:10px;">
+                @if ($status === 'Selesai')
                 <button class="btn-primary">Nilai</button>
-                <button class="btn-secondary">Hubungi Kami</button>
-                <button class="btn-secondary">Pesan Lagi</button>
-                <button class="btn-secondary" onclick="openDetailModal('detailModal3')">Lihat Rincian</button>
+                @endif
+                <button class="btn-secondary" onclick="hubungiKami()">Hubungi Kami</button>
+                <button class="btn-secondary" onclick="pesanLagi('{{ route('menu') }}')">Pesan Lagi</button>
+                <button class="btn-secondary" onclick="openDetailModal('{{ $modalId }}')">Lihat Rincian</button>
             </div>
         </div>
 
-        <!-- ✅ Kartu 4 (Dibatalkan) -->
-        <div class="order-card">
-            <div class="order-header">
-                <div class="order-header-left">
-                    <span class="iconify" data-icon="mdi:calendar"></span>
-                    Tanggal 6-7 Oktober 2025
+        {{-- Modal Detail untuk pesanan ini --}}
+        <div id="{{ $modalId }}" class="modal-backdrop" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle_{{ $order->id_pesanan }}">
+                <div class="order-header-popup">
+                    <div class="order-date">
+                        <span class="iconify" data-icon="mdi:calendar"></span>
+                        Tanggal {{ $mulai }} – {{ $akhir }}
+                    </div>
+                    <div class="order-id">NO. PESANAN: {{ $order->no_pesanan }} | Status: {{ $status }}</div>
                 </div>
-                <div class="status">Dibatalkan</div>
-            </div>
 
-            <div class="product">
-                <img src="images/ber4extra.png" alt="Paket Slice Ber-4 Xtra">
-                <div class="product-info">
-                    <h4>Paket Slice Ber-4 Xtra</h4>
-                    <p>x1</p>
+                <h3 id="modalTitle_{{ $order->id_pesanan }}" style="margin:0 0 8px; color:#7B001F;">Detail Pesanan</h3>
+
+                @foreach ($order->details as $d)
+                @php
+                $p = $d->product;
+                $img = $p && $p->gambar ? asset('storage/'.ltrim($p->gambar,'/')) : asset('images/bbq.jpg');
+                @endphp
+                <div class="modal-product">
+                    <img src="{{ $img }}" alt="{{ $p->nama_produk ?? 'Produk' }}">
+                    <div class="info">
+                        <h4>{{ $p->nama_produk ?? $d->id_produk }}</h4>
+                        <p>x{{ $d->jumlah_sewa }} • {{ $d->durasi_hari }} hari</p>
+                        <p class="price">Rp{{ number_format($d->harga_satuan,0,',','.') }} /hari • Subtotal: Rp{{ number_format($d->subtotal,0,',','.') }}</p>
+                    </div>
                 </div>
-                <div class="price">Rp245.000</div>
-            </div>
+                @endforeach
 
-            <div class="total">
-                <span>Total 1 Produk</span>
-                <strong>Rp246.000</strong>
-            </div>
+                <div class="modal-section">
+                    <div class="label">Ringkasan</div>
+                    <p>Total {{ $totalQty }} Produk</p>
+                    @if(!empty($order->catatan_tambahan))
+                    <p>Pesan untuk pemilik: {{ $order->catatan_tambahan }}</p>
+                    @endif
+                </div>
 
-            <div class="buttons">
-                <button class="btn-secondary">Hubungi Kami</button>
-                <button class="btn-secondary">Pesan Lagi</button>
-                <button class="btn-secondary" onclick="openDetailModal('detailModal4')">Lihat Rincian</button>
+                <div class="modal-section">
+                    <div class="label">Data Penerima</div>
+                    <p>Nama Penerima: {{ $order->nama_penerima }}</p>
+                </div>
+
+                <div class="modal-section">
+                    <div class="label">Rincian Pembayaran</div>
+                    <p class="label" style="margin-top:8px;">Total Pembayaran: Rp{{ number_format($order->total_harga,0,',','.') }}</p>
+                    {{-- Jika kamu simpan metode pembayaran di header, tampilkan di sini --}}
+                    {{-- <p>Metode Pembayaran: {{ strtoupper($order->metode_pembayaran) }}</p> --}}
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn primary" onclick="closeAllModals()">Tutup</button>
+                    <button class="modal-btn ghost" onclick="pesanLagi('{{ route('menu') }}')">Pesan Lagi</button>
+                    <button class="modal-btn ghost" onclick="hubungiKami()">Hubungi Kami</button>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- ===== MODAL DETAIL PESANAN 1 ===== -->
-    <div id="detailModal1" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="order-header-popup">
-                <div class="order-date">
-                    <span class="iconify" data-icon="mdi:calendar"></span> Tanggal 6–7 Oktober 2025
-                </div>
-                <div class="order-id">NO. PESANAN: P4X–004 | Pesanan Diproses</div>
-            </div>
-
-            <h3 id="modalTitle">Detail Pesanan</h3>
-
-            <div class="modal-product">
-                <img src="{{ asset('images/ber4extra.png') }}" alt="Paket Slice Ber-4 Xtra">
-                <div class="info">
-                    <h4>Paket Slice Ber–4 Xtra</h4>
-                    <p>x1</p>
-                    <p class="price">Rp245.000</p>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Ringkasan</div>
-                <p>Total 1 Produk</p>
-                <p>Pesan untuk pemilik: ambil agak siang</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Lokasi Pengambilan</div>
-                <p>Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Rincian Pembayaran</div>
-                <p>Subtotal Pesanan: Rp245.000</p>
-                <p>Biaya Layanan: Rp1.000</p>
-                <p class="label" style="margin-top:8px;">Total Pembayaran: Rp246.000</p>
-                <p>Metode Pembayaran: COD</p>
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn primary" onclick="closeDetailModal()">Tutup</button>
-                <button class="modal-btn ghost" onclick="handlePesanLagi()">Pesan Lagi</button>
-                <button class="modal-btn ghost" onclick="handleHubungi()">Hubungi Kami</button>
+        @empty
+        <div class="order-card" style="text-align:center;">
+            <div class="muted">Belum ada riwayat pemesanan.</div>
+            <div class="buttons" style="justify-content:center; margin-top:12px;">
+                <a href="{{ route('menu') }}"><button class="btn-primary">Mulai Belanja</button></a>
             </div>
         </div>
-    </div>
-
-    <!-- ===== MODAL DETAIL PESANAN 2 ===== -->
-    <div id="detailModal2" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="order-header-popup">
-                <div class="order-date">
-                    <span class="iconify" data-icon="mdi:calendar"></span> Tanggal 6–7 Oktober 2025
-                </div>
-                <div class="order-id">NO. PESANAN: P4X–003 | Pesanan Disewa</div>
-            </div>
-
-            <h3 id="modalTitle">Detail Pesanan</h3>
-
-            <div class="modal-product">
-                <img src="{{ asset('images/bbq.jpg') }}" alt="Paket Alat BBQ">
-                <div class="info">
-                    <h4>Paket Alat BBQ</h4>
-                    <p>x1</p>
-                    <p class="price">Rp45.000</p>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Ringkasan</div>
-                <p>Total 1 Produk</p>
-                <p>Pesan untuk pemilik: - </p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Lokasi Pengambilan</div>
-                <p>Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Rincian Pembayaran</div>
-                <p>Subtotal Pesanan: Rp45.000</p>
-                <p>Biaya Layanan: Rp1.000</p>
-                <p class="label" style="margin-top:8px;">Total Pembayaran: Rp46.000</p>
-                <p>Metode Pembayaran: COD</p>
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn primary" onclick="closeDetailModal()">Tutup</button>
-                <button class="modal-btn ghost" onclick="handlePesanLagi()">Pesan Lagi</button>
-                <button class="modal-btn ghost" onclick="handleHubungi()">Hubungi Kami</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- ===== MODAL DETAIL PESANAN 2 ===== -->
-    <div id="detailModal3" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="order-header-popup">
-                <div class="order-date">
-                    <span class="iconify" data-icon="mdi:calendar"></span> Tanggal 8–9 Oktober 2025
-                </div>
-                <div class="order-id">NO. PESANAN: P4X–002 | Pesanan Selesai</div>
-            </div>
-
-            <h3 id="modalTitle">Detail Pesanan</h3>
-
-            <!-- ✅ Produk 1 -->
-            <div class="modal-product">
-                <img src="{{ asset('images/ber4extra.png') }}" alt="Paket Slice Ber-4 Xtra">
-                <div class="info">
-                    <h4>Paket Slice Ber–4 Xtra</h4>
-                    <p>x1</p>
-                    <p class="price">Rp234.000</p>
-                </div>
-            </div>
-
-            <!-- ✅ Produk 2 (gambar kedua di bawah) -->
-            <div class="modal-product">
-                <img src="{{ asset('images/ber6extra.png') }}" alt="Paket Slice Ber-6 Xtra">
-                <div class="info">
-                    <h4>Paket Slice Ber–6 Xtra</h4>
-                    <p>x1</p>
-                    <p class="price">Rp345.000</p>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Ringkasan</div>
-                <p>Total 2 Produk</p>
-                <p>Pesan untuk pemilik: -</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Lokasi Pengambilan</div>
-                <p>Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Rincian Pembayaran</div>
-                <p>Subtotal Pesanan: Rp590.000</p>
-                <p>Biaya Layanan: Rp1.000</p>
-                <p class="label" style="margin-top:8px;">Total Pembayaran: Rp591.000</p>
-                <p>Metode Pembayaran: BNI</p>
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn primary" onclick="closeDetailModal()">Tutup</button>
-                <button class="modal-btn ghost" onclick="handlePesanLagi()">Pesan Lagi</button>
-                <button class="modal-btn ghost" onclick="handleHubungi()">Hubungi Kami</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL DETAIL PESANAN 3 ===== -->
-    <div id="detailModal4" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="order-header-popup">
-                <div class="order-date">
-                    <span class="iconify" data-icon="mdi:calendar"></span> Tanggal 6–7 Oktober 2025
-                </div>
-                <div class="order-id">NO. PESANAN: P4X–001 | Pesanan Dibatalkan</div>
-            </div>
-
-            <h3 id="modalTitle">Detail Pesanan</h3>
-
-            <div class="modal-product">
-                <img src="{{ asset('images/ber4.png') }}" alt="Paket Slice Ber-4 Xtra">
-                <div class="info">
-                    <h4>Paket Slice Ber–4 Xtra</h4>
-                    <p>x1</p>
-                    <p class="price">Rp245.000</p>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Ringkasan</div>
-                <p>Total 1 Produk</p>
-                <p>Pesan untuk pemilik: Ambil sore</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Lokasi Pengambilan</div>
-                <p>Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125</p>
-            </div>
-
-            <div class="modal-section">
-                <div class="label">Rincian Pembayaran</div>
-                <p>Subtotal Pesanan: Rp245.000</p>
-                <p>Biaya Layanan: Rp1.000</p>
-                <p class="label" style="margin-top:8px;">Total Pembayaran: Rp246.000</p>
-                <p>Metode Pembayaran: BNI</p>
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn primary" onclick="closeDetailModal()">Tutup</button>
-                <button class="modal-btn ghost" onclick="handlePesanLagi()">Pesan Lagi</button>
-                <button class="modal-btn ghost" onclick="handleHubungi()">Hubungi Kami</button>
-            </div>
-        </div>
+        @endforelse
     </div>
 
     <script>
+        // ==== Tabs filter (client-side) ====
+        const tabs = document.querySelectorAll('.tabs button');
+        const cards = document.querySelectorAll('.order-item');
+
+        function setActiveTab(btn) {
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function applyFilter(value) {
+            cards.forEach(c => {
+                const st = (c.getAttribute('data-status') || '').trim();
+                const show = (value === 'all') ? true : (st === value);
+                c.style.display = show ? '' : 'none';
+            });
+        }
+
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setActiveTab(btn);
+                applyFilter(btn.dataset.filter);
+            });
+        });
+
+        // ==== Modal helpers ====
         function openDetailModal(id) {
             const modal = document.getElementById(id);
+            if (!modal) return;
             modal.style.display = 'flex';
             modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden'; // biar halaman gak bisa discroll saat popup muncul
+            document.body.style.overflow = 'hidden';
         }
 
-        function closeDetailModal() {
-            const modals = document.querySelectorAll('[id^="detailModal"]');
-            modals.forEach(modal => {
-                modal.style.display = 'none';
-                modal.setAttribute('aria-hidden', 'true');
+        function closeAllModals() {
+            document.querySelectorAll('.modal-backdrop').forEach(m => {
+                m.style.display = 'none';
+                m.setAttribute('aria-hidden', 'true');
             });
-            document.body.style.overflow = ''; // aktifkan scroll lagi
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeAllModals();
+        });
+
+        // ==== Actions ====
+        function pesanLagi(menuUrl) {
+            window.location.href = menuUrl;
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeDetailModal();
-        });
+        function hubungiKami() {
+            window.location.href = "https://wa.me/6287746567500";
+        }
     </script>
-
-
 </body>
+
 </html>

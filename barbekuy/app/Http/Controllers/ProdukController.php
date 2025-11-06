@@ -84,7 +84,8 @@ class ProdukController extends Controller
         }
 
         // Konsistenkan status
-        $status = $request->stok > 0 ? 'tersedia' : 'habis';
+        // Konsistenkan status
+        $status = $request->stok > 0 ? 'tersedia' : 'tidak_tersedia';
 
         // Simpan ke database
         DB::table('produk')->insert([
@@ -130,7 +131,8 @@ class ProdukController extends Controller
         }
 
         // Konsistenkan status
-        $status = $request->stok > 0 ? 'tersedia' : 'habis';
+        // Konsistenkan status
+        $status = $request->stok > 0 ? 'tersedia' : 'tidak_tersedia';
 
         DB::table('produk')->where('id_produk', $id)->update([
             'nama_produk'         => $request->nama_produk,

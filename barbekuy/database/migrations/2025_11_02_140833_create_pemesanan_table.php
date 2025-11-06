@@ -23,6 +23,9 @@ return new class extends Migration {
             $table->string('catatan_tambahan')->nullable();      // ambil siang/pagi
             $table->string('status_pesanan')->default('Belum Bayar'); // Belum Bayar / Selesai
 
+            // 🆕 Tambahkan kolom untuk path file KTP
+            $table->string('ktp_path', 255)->nullable();
+
             $table->timestamps();
         });
     }
