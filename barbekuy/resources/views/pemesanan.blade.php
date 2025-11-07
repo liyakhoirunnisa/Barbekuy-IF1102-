@@ -53,17 +53,23 @@
     @endphp
 
     <!-- Header Sticky -->
-    <header class="sticky top-0 left-0 w-full bg-[#7B0D1E] text-white py-4 px-4 flex items-center justify-center shadow-md z-50">
-        <!-- Tombol Kembali -->
-        <button
-            onclick="window.history.back()"
-            class="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition">
-            <span class="iconify text-xl text-white" data-icon="mdi:chevron-left"></span>
-        </button>
+    <!-- Header Sticky (SAMAKAN TINGGI & LEBAR DENGAN NAVBAR BERANDA) -->
+    <header class="sticky top-0 z-50 bg-[#7B0D1E] text-white shadow-sm">
+        <!-- Lebar mengikuti .container Bootstrap (~1140px di desktop) + padding responsif -->
+        <div class="relative mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-center" style="max-width:1140px;">
+            <!-- Tombol Kembali (ukuran proporsional seperti ikon navbar) -->
+            <button
+                onclick="window.history.back()"
+                class="absolute left-4 flex items-center justify-center rounded-full"
+                style="width:36px;height:36px;background:rgba(255,255,255,0.15);">
+                <span class="iconify" data-icon="mdi:chevron-left" style="font-size:1.25rem;color:#fff;"></span>
+            </button>
 
-        <!-- Judul -->
-        <h1 class="text-lg font-semibold">Pemesanan</h1>
+            <!-- Judul (tetap di tengah) -->
+            <h1 class="m-0 font-semibold" style="font-size:1.5rem;">Pemesanan</h1>
+        </div>
     </header>
+
     @if ($errors->any())
     <div class="max-w-3xl mx-auto p-4 mt-4 rounded-lg bg-red-50 text-red-700">
         <ul class="list-disc list-inside text-sm">
@@ -80,7 +86,7 @@
     </div>
     @endif
     <!-- Konten -->
-    <main class="max-w-3xl mx-auto p-6 pt-4">
+    <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-4" style="max-width:1140px;">
         <form id="formPemesanan" action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
             @csrf
             <!-- Produk -->

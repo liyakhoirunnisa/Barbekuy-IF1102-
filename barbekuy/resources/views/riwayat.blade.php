@@ -9,37 +9,109 @@
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
 
     <style>
+        :root {
+            --hdr: 56px;
+            /* tinggi header (sama seperti pemesanan) */
+            --tabs: 56px;
+            /* tinggi bar tabs */
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             background: #f9f9f9;
             margin: 0;
         }
 
-        header {
-            background: #7B001F;
-            color: #fff;
-            padding: 1.2rem 2rem;
-            text-align: center;
-            font-weight: 600;
-            font-size: 20px;
-            position: fixed;
+        /* mirror .container Bootstrap */
+        .bb-container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        @media (min-width:576px) {
+            .bb-container {
+                max-width: 540px
+            }
+        }
+
+        @media (min-width:768px) {
+            .bb-container {
+                max-width: 720px
+            }
+        }
+
+        @media (min-width:992px) {
+            .bb-container {
+                max-width: 960px
+            }
+        }
+
+        @media (min-width:1200px) {
+            .bb-container {
+                max-width: 1140px
+            }
+        }
+
+        @media (min-width:1400px) {
+            .bb-container {
+                max-width: 1320px
+            }
+        }
+
+        /* === HEADER (match pemesanan) === */
+        .bb-header {
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
             z-index: 1000;
+            background: #7B0D1E;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+        }
+
+        .bb-header__inner {
+            height: var(--hdr);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .bb-header__title {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        /* sama seperti pemesanan sekarang */
+        .bb-header__back {
+            position: absolute;
+            left: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            border: 0;
+            cursor: pointer;
+            background: rgba(255, 255, 255, .15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        /* === TABS (di bawah header, sticky) === */
+        .tabs-bar {
+            position: sticky;
+            top: var(--hdr);
+            z-index: 999;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
         }
 
         .tabs {
             display: flex;
             justify-content: space-around;
-            background: #fff;
-            padding: 1rem 0;
-            border-bottom: 1px solid #ddd;
-            position: fixed;
-            top: 65px;
-            left: 0;
-            right: 0;
-            z-index: 999;
+            padding: 12px 0;
         }
 
         .tabs button {
@@ -52,19 +124,21 @@
         }
 
         .tabs button.active {
-            color: #7B001F;
-            border-bottom: 2px solid #7B001F;
+            color: #7B0D1E;
+            border-bottom: 2px solid #7B0D1E;
         }
 
+        /* === CONTENT WIDTH & SPACING === */
         .container {
-            max-width: 980px;
-            margin: 150px auto 40px;
+            max-width: 1140px;
+            margin: 24px auto 40px;
             padding: 0 16px;
         }
 
+        /* dulu 980 + margin-top besar; sekarang seragam */
         .alert {
-            max-width: 980px;
-            margin: 110px auto 8px;
+            max-width: 1140px;
+            margin: 16px auto 8px;
             padding: 10px 12px;
             border-radius: 8px;
         }
@@ -81,6 +155,7 @@
             border: 1px solid #f5c2c2;
         }
 
+        /* === KARTU DST (tetap) === */
         .order-card {
             background: #fff;
             margin: 1rem 0;
@@ -106,13 +181,13 @@
         }
 
         .order-header-left .iconify {
-            color: #7B001F;
+            color: #7B0D1E;
             font-size: 18px;
         }
 
         .status {
             font-weight: 600;
-            color: #7B001F;
+            color: #7B0D1E;
         }
 
         .product {
@@ -186,13 +261,13 @@
         }
 
         .btn-primary {
-            background: #7B001F;
-            border: 1px solid #7B001F;
+            background: #7B0D1E;
+            border: 1px solid #7B0D1E;
             color: #fff;
         }
 
         .btn-primary:hover {
-            background: #68011b;
+            background: #5d0a17;
         }
 
         .btn-secondary {
@@ -203,11 +278,11 @@
         }
 
         .btn-secondary:hover {
-            border-color: #7B001F;
-            color: #7B001F;
+            border-color: #7B0D1E;
+            color: #7B0D1E;
         }
 
-        /* modal */
+        /* modal (tetap) */
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -247,7 +322,7 @@
         }
 
         .order-id {
-            color: #7B001F;
+            color: #7B0D1E;
             font-weight: 600;
             font-size: 14px;
         }
@@ -313,7 +388,7 @@
         }
 
         .modal-btn.primary {
-            background: #7B001F;
+            background: #7B0D1E;
             color: #fff;
         }
 
@@ -326,12 +401,12 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: scale(.98);
+                transform: scale(.98)
             }
 
             to {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1)
             }
         }
 
@@ -340,30 +415,34 @@
             font-size: 12px;
         }
     </style>
+
 </head>
 
 <body>
 
-    <header>Riwayat Pemesanan</header>
+    <!-- HEADER (match pemesanan) -->
+    <header class="bb-header">
+        <div class="bb-container bb-header__inner">
+            <button class="bb-header__back" onclick="history.back()" aria-label="Kembali">
+                <span class="iconify" data-icon="mdi:chevron-left" style="font-size:1.25rem;"></span>
+            </button>
+            <h1 class="bb-header__title">Riwayat Pemesanan</h1>
+        </div>
+    </header>
 
-    {{-- Flash message --}}
-    @if (session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-    <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
-    {{-- Tabs filter (client-side) --}}
-    <div class="tabs" role="tablist" aria-label="Filter status">
-        <button type="button" class="active" data-filter="all">Semua</button>
-        <button type="button" data-filter="Belum Bayar">Belum Bayar</button>
-        <button type="button" data-filter="Menunggu Konfirmasi">Sedang Proses</button>
-        <button type="button" data-filter="Disiapkan">Disiapkan</button>
-        <button type="button" data-filter="Disewa">Disewa</button>
-        <button type="button" data-filter="Selesai">Selesai</button>
-        <button type="button" data-filter="Dibatalkan">Dibatalkan</button>
+    <!-- TABS (sticky di bawah header, konten dibatasi container) -->
+    <div class="tabs-bar" role="tablist" aria-label="Filter status">
+        <div class="bb-container tabs">
+            <button type="button" class="active" data-filter="all">Semua</button>
+            <button type="button" data-filter="Belum Bayar">Belum Bayar</button>
+            <button type="button" data-filter="Menunggu Konfirmasi">Sedang Proses</button>
+            <button type="button" data-filter="Disiapkan">Disiapkan</button>
+            <button type="button" data-filter="Disewa">Disewa</button>
+            <button type="button" data-filter="Selesai">Selesai</button>
+            <button type="button" data-filter="Dibatalkan">Dibatalkan</button>
+        </div>
     </div>
+    
 
     <div class="container" id="ordersContainer">
         @forelse ($pemesanan as $order)
