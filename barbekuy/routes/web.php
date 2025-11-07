@@ -9,6 +9,7 @@ use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PemesananController;
+use App\Http\Controllers\TransaksiController;
 
 // ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
 use App\Http\Controllers\PengaturanController as AdminPengaturanController;
@@ -174,6 +175,11 @@ Route::middleware(['auth'])->group(function () {
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/beranda', [BerandaController::class, 'admin'])->name('admin.beranda');
+    
+    Route::get('/transaksi', [TransaksiController::class, 'index'])
+        ->name('admin.transaksi');
+    Route::patch('/transaksi/{pemesanan}/status', [TransaksiController::class, 'updateStatus'])
+        ->name('admin.transaksi.updateStatus');
 
     Route::get('/produk', [ProdukController::class, 'adminIndex'])->name('admin.produk');
     Route::post('/produk/tambah', [ProdukController::class, 'store'])->name('produk.store');
@@ -181,7 +187,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::delete('/produk/delete/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
 
     Route::view('/notifikasi', 'admin.notifikasi')->name('admin.notifikasi');
-    Route::view('/transaksi', 'admin.transaksi')->name('admin.transaksi');
     Route::view('/pembayaran', 'admin.pembayaran')->name('admin.pembayaran');
     Route::view('/pesan', 'admin.pesan')->name('admin.pesan');
 
