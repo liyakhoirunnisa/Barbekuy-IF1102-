@@ -28,12 +28,37 @@
       padding: 30px 40px
     }
 
+    /* kotak utama jadi kolom biar area tabel bisa ambil tinggi tersisa */
     .content-box {
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, .05);
+      display: flex;
+      flex-direction: column;
+      height: 78vh;
+      /* sesuaikan 74–82vh kalau kepanjangan */
+      min-height: 0;
       padding: 28px
     }
+
+
+    /* area khusus yg scroll */
+    .table-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+
+    /* header tabel lengket di atas saat scroll */
+    .table-scroll thead th {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 5;
+    }
+
 
     .content-header {
       display: flex;
@@ -665,101 +690,102 @@
               style="flex:1" />
           </form>
         </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Transaksi</th>
+                <th>Tanggal Pemesanan</th>
+                <th>Nama</th>
+                <th>Status Pemesanan</th>
+                <th>Total</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="txBody">
+              @forelse ($orders as $order)
+              <tr>
+                <td>{{ $order->no_pesanan }}</td>
+                <td>{{ optional($order->created_at)->format('d/m/Y') }}</td>
+                <td>{{ $order->nama_penerima ?? optional($order->user)->name ?? '-' }}</td>
 
-        <table>
-          <thead>
-            <tr>
-              <th>ID Transaksi</th>
-              <th>Tanggal Pemesanan</th>
-              <th>Nama</th>
-              <th>Status Pemesanan</th>
-              <th>Total</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="txBody">
-            @forelse ($orders as $order)
-            <tr>
-              <td>{{ $order->no_pesanan }}</td>
-              <td>{{ optional($order->created_at)->format('d/m/Y') }}</td>
-              <td>{{ $order->nama_penerima ?? optional($order->user)->name ?? '-' }}</td>
+                {{-- STATUS: dropdown bergaya badge, auto-submit saat diubah --}}
+                <td>
+                  <form method="POST" action="{{ route('admin.transaksi.updateStatus', $order) }}" class="status-form">
+                    @csrf
+                    @method('PATCH')
 
-              {{-- STATUS: dropdown bergaya badge, auto-submit saat diubah --}}
-              <td>
-                <form method="POST" action="{{ route('admin.transaksi.updateStatus', $order) }}" class="status-form">
-                  @csrf
-                  @method('PATCH')
+                    <div class="status-dd">
+                      {{-- tombol pill yang kelihatan di tabel --}}
+                      <button type="button"
+                        class="status-pill {{ 'st-'.Str::of($order->status_pesanan)->lower()->replace(' ', '-') }}">
+                        {{ $order->status_pesanan ?? '-' }}
+                      </button>
 
-                  <div class="status-dd">
-                    {{-- tombol pill yang kelihatan di tabel --}}
-                    <button type="button"
-                      class="status-pill {{ 'st-'.Str::of($order->status_pesanan)->lower()->replace(' ', '-') }}">
-                      {{ $order->status_pesanan ?? '-' }}
-                    </button>
+                      {{-- nilai yang akan dikirim --}}
+                      <input type="hidden" name="status_pesanan" value="{{ $order->status_pesanan }}">
 
-                    {{-- nilai yang akan dikirim --}}
-                    <input type="hidden" name="status_pesanan" value="{{ $order->status_pesanan }}">
+                      {{-- menu opsi berwarna --}}
+                      <ul class="status-menu">
+                        @foreach ($statuses as $st)
+                        @php
+                        $cls = 'st-'.\Illuminate\Support\Str::of($st)->lower()->replace(' ', '-');
+                        @endphp
+                        <li>
+                          <button type="button" class="status-item {{ $cls }}" data-value="{{ $st }}">
+                            {{ $st }}
+                          </button>
+                        </li>
+                        @endforeach
+                      </ul>
+                    </div>
+                  </form>
+                </td>
 
-                    {{-- menu opsi berwarna --}}
-                    <ul class="status-menu">
-                      @foreach ($statuses as $st)
-                      @php
-                      $cls = 'st-'.\Illuminate\Support\Str::of($st)->lower()->replace(' ', '-');
-                      @endphp
-                      <li>
-                        <button type="button" class="status-item {{ $cls }}" data-value="{{ $st }}">
-                          {{ $st }}
-                        </button>
-                      </li>
-                      @endforeach
-                    </ul>
-                  </div>
-                </form>
-              </td>
+                <td>Rp{{ number_format($order->total_harga, 0, ',', '.') }}</td>
 
-              <td>Rp{{ number_format($order->total_harga, 0, ',', '.') }}</td>
+                {{-- Aksi tetap: link Detail (atau nanti popup) --}}
+                <td>
+                  @php
+                  $items = $order->details->map(function($d){
+                  return [
+                  'nama' => optional($d->product)->nama_produk ?? 'Produk',
+                  'qty' => (int)($d->jumlah ?? 1),
+                  'harga' => (int)($d->harga_satuan ?? $d->harga_sewa ?? 0),
+                  'subtotal' => (int)($d->subtotal ?? (($d->harga_satuan ?? $d->harga_sewa ?? 0) * ($d->jumlah ?? 1))),
+                  ];
+                  })->values()->toArray();
 
-              {{-- Aksi tetap: link Detail (atau nanti popup) --}}
-              <td>
-                @php
-                $items = $order->details->map(function($d){
-                return [
-                'nama' => optional($d->product)->nama_produk ?? 'Produk',
-                'qty' => (int)($d->jumlah ?? 1),
-                'harga' => (int)($d->harga_satuan ?? $d->harga_sewa ?? 0),
-                'subtotal' => (int)($d->subtotal ?? (($d->harga_satuan ?? $d->harga_sewa ?? 0) * ($d->jumlah ?? 1))),
-                ];
-                })->values()->toArray();
+                  $payload = [
+                  'id' => $order->id_pesanan,
+                  'no' => $order->no_pesanan,
+                  'nama' => $order->nama_penerima ?? optional($order->user)->name,
+                  'tgl_pesan' => optional($order->created_at)?->format('d/m/Y'),
+                  'tgl_sewa' => optional($order->tanggal_sewa)?->format('d/m/Y'),
+                  'tgl_kembali' => optional($order->tanggal_pengembalian)?->format('d/m/Y'),
+                  'status' => $order->status_pesanan,
+                  'total' => (int)($order->total_harga ?? 0),
+                  'items' => $items,
+                  ];
+                  @endphp
 
-                $payload = [
-                'id' => $order->id_pesanan,
-                'no' => $order->no_pesanan,
-                'nama' => $order->nama_penerima ?? optional($order->user)->name,
-                'tgl_pesan' => optional($order->created_at)?->format('d/m/Y'),
-                'tgl_sewa' => optional($order->tanggal_sewa)?->format('d/m/Y'),
-                'tgl_kembali' => optional($order->tanggal_pengembalian)?->format('d/m/Y'),
-                'status' => $order->status_pesanan,
-                'total' => (int)($order->total_harga ?? 0),
-                'items' => $items,
-                ];
-                @endphp
-
-                <button type="button"
-                  class="detail-link"
-                  data-order='@json($payload)'>
-                  Detail
-                </button>
-              </td>
+                  <button type="button"
+                    class="detail-link"
+                    data-order='@json($payload)'>
+                    Detail
+                  </button>
+                </td>
 
 
-            </tr>
-            @empty
-            <tr>
-              <td colspan="6" style="text-align:center;color:#777;">Belum ada transaksi.</td>
-            </tr>
-            @endforelse
-          </tbody>
-        </table>
+              </tr>
+              @empty
+              <tr>
+                <td colspan="6" style="text-align:center;color:#777;">Belum ada transaksi.</td>
+              </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
         <!-- ========== Modal Detail Pesanan ========== -->
         <div class="modal" id="orderModal" aria-hidden="true">
           <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="md-title">
@@ -799,13 +825,6 @@
             </div>
           </div>
         </div>
-        <!-- ========== /Modal Detail Pesanan ========== -->
-
-        {{-- Pagination (kalau pakai paginate) --}}
-        @if(method_exists($orders, 'links'))
-        <div style="margin-top:16px;">{{ $orders->appends(request()->query())->links() }}</div>
-        @endif
-
       </div>
     </div>
   </main>

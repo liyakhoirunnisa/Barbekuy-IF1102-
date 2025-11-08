@@ -18,7 +18,6 @@ class PengaturanController extends Controller
             'email'       => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user->id)],
             'phone'       => ['nullable', 'string', 'max:25'],
             'gender'      => ['nullable', Rule::in(['L', 'P'])],
-            'national_id' => ['nullable', 'string', 'max:50'],
             'address'     => ['nullable', 'string', 'max:2000'],
             'avatar'      => ['nullable', 'image', 'max:2048'], // file input, bukan path
         ]);
@@ -69,30 +68,9 @@ class PengaturanController extends Controller
 
         $user->update([
             'notif_email'   => $request->boolean('notif_email'),
-            'notif_message' => $request->boolean('notif_message'),
             'notif_payment' => $request->boolean('notif_payment'),
         ]);
 
         return back()->with('success', 'Preferensi notifikasi disimpan.');
-    }
-
-    public function verify(Request $request)
-    {
-        $request->validate([
-            'verification_code' => ['required', 'string', 'max:10'],
-        ]);
-
-        $user = $request->user();
-
-        if ($user->verification_code && $user->verification_code === $request->verification_code) {
-            $user->verification_code = null;
-            $user->save();
-
-            return back()->with('success', 'Akun berhasil diverifikasi.');
-        }
-
-        return back()->withErrors([
-            'verification_code' => 'Kode verifikasi salah atau sudah kadaluarsa.'
-        ]);
     }
 }
