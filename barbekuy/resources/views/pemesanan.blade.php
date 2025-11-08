@@ -292,44 +292,14 @@
                         <input type="radio" name="metode_pembayaran" value="cod" class="h-5 w-5 text-[#7B0D1E]">
                     </label>
 
-                    <label class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
+                    <!-- Bayar Online (Midtrans) -->
+                    <label
+                        class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
                         <span class="font-medium text-gray-700 flex items-center gap-2">
-                            <span class="iconify text-gray-500 text-lg" data-icon="mdi:bank-transfer"></span>
-                            Transfer Bank (BCA / Mandiri)
+                            <span class="iconify text-[#7B0D1E] text-lg" data-icon="mdi:credit-card-scan-outline"></span>
+                            Bayar Online (Midtrans)
                         </span>
-                        <input type="radio" name="metode_pembayaran" value="transfer_bank" class="h-5 w-5 text-[#7B0D1E]">
-                    </label>
-
-                    <label class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
-                        <span class="font-medium text-gray-700 flex items-center gap-2">
-                            <span class="iconify text-blue-500 text-lg" data-icon="mdi:wallet-outline"></span>
-                            DANA
-                        </span>
-                        <input type="radio" name="metode_pembayaran" value="dana" class="h-5 w-5 text-[#7B0D1E]">
-                    </label>
-
-                    <label class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
-                        <span class="font-medium text-gray-700 flex items-center gap-2">
-                            <span class="iconify text-purple-500 text-lg" data-icon="mdi:cellphone-wireless"></span>
-                            OVO
-                        </span>
-                        <input type="radio" name="metode_pembayaran" value="ovo" class="h-5 w-5 text-[#7B0D1E]">
-                    </label>
-
-                    <label class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
-                        <span class="font-medium text-gray-700 flex items-center gap-2">
-                            <span class="iconify text-cyan-500 text-lg" data-icon="mdi:credit-card-scan-outline"></span>
-                            GoPay
-                        </span>
-                        <input type="radio" name="metode_pembayaran" value="gopay" class="h-5 w-5 text-[#7B0D1E]">
-                    </label>
-
-                    <label class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
-                        <span class="font-medium text-gray-700 flex items-center gap-2">
-                            <span class="iconify text-gray-500 text-lg" data-icon="mdi:numeric"></span>
-                            Virtual Account (Otomatis)
-                        </span>
-                        <input type="radio" name="metode_pembayaran" value="va" class="h-5 w-5 text-[#7B0D1E]">
+                        <input type="radio" name="metode_pembayaran" value="midtrans" class="h-5 w-5 text-[#7B0D1E]" required>
                     </label>
                 </div>
             </div>

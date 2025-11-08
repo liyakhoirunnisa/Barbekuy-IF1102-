@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PemesananController;
 use App\Http\Controllers\TransaksiController;
 
@@ -233,3 +234,14 @@ Route::get('/ulasan', function () {
 
     return view('ulasan', compact('reviews'));
 })->name('ulasan.index');
+
+/*
+|--------------------------------------------------------------------------
+| 💳 Midtrans Payment Routes
+|--------------------------------------------------------------------------
+*/
+Route::get('/midtrans/token', [MidtransController::class, 'getSnapToken'])->name('midtrans.token');
+Route::view('/payment', 'payment')->name('payment');
+Route::get('/midtrans/finish', [MidtransController::class, 'finish'])->name('midtrans.finish');
+Route::post('/midtrans/notification', [MidtransController::class, 'notificationHandler'])
+    ->name('midtrans.notification');

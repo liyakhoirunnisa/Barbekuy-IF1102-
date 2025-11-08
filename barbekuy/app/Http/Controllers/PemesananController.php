@@ -9,6 +9,9 @@ use App\Models\Pemesanan;
 use App\Models\DetailPemesanan;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Midtrans\Config;
+use Midtrans\Snap;
+
 
 class PemesananController extends Controller
 {
@@ -77,7 +80,7 @@ class PemesananController extends Controller
             'nama_penerima'        => 'required|string|max:100',
             'jumlah_sewa'          => 'required|integer|min:1',
             'catatan_tambahan'     => 'nullable|string|max:255',
-            'metode_pembayaran'    => 'nullable|string|in:cod,transfer_bank,dana,ovo,gopay,va',
+            'metode_pembayaran' => 'required|string|in:cod,midtrans',
             'lokasi_pengambilan'   => 'nullable|string|max:255',
 
             // ⬇️ W A J I B
@@ -122,8 +125,56 @@ class PemesananController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('riwayat.semua')
-                ->with('success', "Pesanan {$p->no_pesanan} berhasil dibuat.");
+
+            // === CEK METODE PEMBAYARAN ===
+            // === CEK METODE PEMBAYARAN ===
+            if ($validated['metode_pembayaran'] === 'cod') {
+                $p->update(['status_pesanan' => 'Sedang Proses']);
+                return redirect()->route('riwayat.semua')
+                    ->with('success', "Pesanan COD {$p->no_pesanan} berhasil dibuat dan sedang diproses.");
+            } else {
+                // === MIDTRANS REDIRECT FLOW ===
+                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                \Midtrans\Config::$isSanitized  = config('midtrans.is_sanitized');
+                \Midtrans\Config::$is3ds        = config('midtrans.is_3ds');
+
+                $biayaLayanan = 1000;
+                $totalBayar   = $p->total_harga + $biayaLayanan;
+
+                $params = [
+                    'transaction_details' => [
+                        'order_id'     => $p->id_pesanan,   // pastikan unik
+                        'gross_amount' => $totalBayar,
+                    ],
+                    'item_details' => [
+                        ['id' => 'produk',  'price' => $p->total_harga, 'quantity' => 1, 'name' => 'Total Sewa'],
+                        ['id' => 'layanan', 'price' => $biayaLayanan,   'quantity' => 1, 'name' => 'Biaya Layanan'],
+                    ],
+                    'customer_details' => [
+                        'first_name' => $p->nama_penerima,
+                        'email'      => auth()->user()->email ?? 'noemail@example.com',
+                    ],
+                    // agar selesai bayar balik ke websitemu
+                    'callbacks' => [
+                        'finish' => route('midtrans.finish'),
+                    ],
+                ];
+
+                // buat transaksi → dapat redirect_url
+                $snap = \Midtrans\Snap::createTransaction($params);
+
+                // simpan info (opsional)
+                $p->update([
+                    'total_harga' => $totalBayar,
+                    'snap_token'  => $snap->token ?? null,
+                    'metode_pembayaran'  => $validated['metode_pembayaran'],        // kalau kolom ada
+                    'lokasi_pengambilan' => $validated['lokasi_pengambilan'] ?? null
+                ]);
+
+                // langsung pindah ke halaman Midtrans (tab yang sama)
+                return redirect()->away($snap->redirect_url);
+            }
         } catch (\Throwable $e) {
             DB::rollBack();
             report($e);
@@ -218,7 +269,7 @@ class PemesananController extends Controller
             'items.*.akhir'         => 'required|date|after_or_equal:items.*.mulai',
             'nama_penerima'         => 'required|string|max:100',
             'catatan_tambahan'      => 'nullable|string|max:255',
-            'metode_pembayaran'     => 'nullable|string|in:cod,transfer_bank,dana,ovo,gopay,va',
+            'metode_pembayaran' => 'required|string|in:cod,midtrans',
             'lokasi_pengambilan'    => 'nullable|string|max:255',
             'ktp'                   => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
