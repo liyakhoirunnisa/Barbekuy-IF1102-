@@ -18,13 +18,38 @@ class TransaksiController extends Controller
         'Dibatalkan',
     ];
 
-    public function index()
+    public function index(Request $request) // ← butuh Request
     {
+        $q       = trim((string) $request->query('q', ''));
+        $status  = $request->query('status');
+        $from    = $request->query('from');
+        $to      = $request->query('to');
+
         $orders = Pemesanan::with(['details.product', 'user'])
+            ->when($status && in_array($status, self::STATUSES, true), function ($qb) use ($status) {
+                $qb->where('status_pesanan', $status);
+            })
+            ->when($from, function ($qb) use ($from) {
+                // filter dari tanggal (created_at)
+                $qb->whereDate('created_at', '>=', $from);
+            })
+            ->when($to, function ($qb) use ($to) {
+                $qb->whereDate('created_at', '<=', $to);
+            })
+            ->when($q !== '', function ($qb) use ($q) {
+                // cari di no_pesanan, nama_penerima, atau user.name
+                $qb->where(function ($w) use ($q) {
+                    $w->where('no_pesanan', 'like', "%{$q}%")
+                        ->orWhere('nama_penerima', 'like', "%{$q}%")
+                        ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$q}%"));
+                });
+            })
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->appends($request->query()); // penting agar pagination mempertahankan filter
 
         $statuses = self::STATUSES;
+
         return view('admin.transaksi', compact('orders', 'statuses'));
     }
 
