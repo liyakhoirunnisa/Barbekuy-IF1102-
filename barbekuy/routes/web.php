@@ -58,9 +58,7 @@ Route::controller(AuthController::class)->group(function () {
 |--------------------------------------------------------------------------
 */
 // ✅ Beranda publik dipindah ke /beranda agar tidak bentrok dengan '/'
-Route::get('/beranda', function () {
-    return view('beranda');
-})->name('beranda');
+Route::get('/beranda', [BerandaController::class, 'index'])->name('beranda');
 
 Route::get('/menu', [ProdukController::class, 'index'])->name('menu');
 

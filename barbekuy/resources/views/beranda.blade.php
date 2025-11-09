@@ -128,6 +128,27 @@
             margin-top: 15px;
         }
 
+        /* Equal height for testimonial cards in one row */
+        .cards-equal>.col-md-4 {
+            display: flex;
+        }
+
+        .testimoni-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* isi rata atas-bawah */
+            height: 100%;
+        }
+
+        .testimoni-bottom {
+            margin-top: auto;
+            /* dorong ke bawah */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* === Footer === */
         footer {
             background-color: #751A25;
@@ -214,161 +235,76 @@
     </section>
 
 
-    {{-- Menu Favorit --}}
+    {{-- Menu Favorit (dinamis) --}}
     <section id="menu-favorit">
         <div class="container text-center">
             <h2>Menu Paling Laris</h2>
             <div class="row justify-content-center">
+                @forelse ($bestSellers as $p)
+                @php
+                // ambil gambar produk (storage) atau fallback
+                $img = !empty($p->gambar)
+                ? asset('storage/'.ltrim($p->gambar, '/'))
+                : asset('images/bbq.jpg');
+
+                // sesuaikan nama kolom harga di tabel produk kamu
+                $harga = $p->harga ?? $p->harga_satuan ?? 0;
+                @endphp
+
                 <div class="col-md-4 mb-4">
                     <div class="card menu-card">
-                        <img src="{{ asset('images/ber4extra.png') }}" class="card-img-top" alt="Paket Slice Ber-4 Extra">
+                        <img src="{{ $img }}" class="card-img-top" alt="{{ $p->nama_produk }}">
                         <div class="card-body">
-                            <h5 class="card-title">Paket Slice Ber-4 Extra</h5>
-                            <p class="card-text harga">Rp245.000</p>
+                            <h5 class="card-title">{{ $p->nama_produk }}</h5>
+                            <p class="card-text harga">Rp{{ number_format($harga, 0, ',', '.') }}</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card menu-card">
-                        <img src="{{ asset('images/ber6extra.png') }}" class="card-img-top" alt="Paket Slice Ber-4 Extra">
-                        <div class="card-body">
-                            <h5 class="card-title">Paket Slice Ber-6 Extra</h5>
-                            <p class="card-text harga">Rp345.000</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card menu-card">
-                        <img src="{{ asset('images/ber10extra.png') }}" class="card-img-top" alt="Paket Slice Ber-4 Extra">
-                        <div class="card-body">
-                            <h5 class="card-title">Paket Slice Ber-10 Extra</h5>
-                            <p class="card-text harga">Rp525.000</p>
-                        </div>
-                    </div>
-                </div>
+                @empty
+                <p class="text-muted">Belum ada data best seller.</p>
+                @endforelse
             </div>
         </div>
     </section>
-
 
     {{-- Testimoni --}}
     <section id="testimoni" class="container text-center py-5">
         <h2 class="mb-5" style="color: #000000; font-weight: 600;">Apa Kata Mereka Tentang Kami</h2>
 
-        <div class="row justify-content-center">
-            {{-- Testimoni 1 --}}
+        <div class="row justify-content-center cards-equal">
+            @forelse ($ulasanTerbaru as $u)
             <div class="col-md-4 mb-4">
-                <div class="p-4 rounded-4 shadow-sm" style="background-color: #751A25; color: white; text-align: left;">
+                <div class="p-4 rounded-4 shadow-sm testimoni-card"
+                    style="background-color: #751A25; color: white; text-align: left;">
                     <div class="d-flex align-items-center mb-3">
-                        <img src="{{ asset('images/profile1.jpg') }}" alt="Profil"
+                        <img src="{{ asset('images/default-user.png') }}" alt="Profil"
                             class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
                         <div>
-                            <h6 class="mb-0 fw-semibold">Theresa Jordan</h6>
+                            <h6 class="mb-0 fw-semibold">{{ $u->nama_user }}</h6>
+                            <small>{{ $u->nama_produk }}</small>
                         </div>
                     </div>
 
                     <p style="font-style: italic; line-height: 1.6; text-align: justify;">
-                        “Pas banget buat BBQ kecil-kecilan bareng temen! Dagingnya fresh, bumbunya lengkap, dan porsinya pas banget. Nggak nyangka sepraktis ini, tinggal panggang aja!”
+                        “{{ $u->komentar }}”
                     </p>
 
-                    <div class="mt-3">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span><i class="bi bi-fire me-1"></i> Paket Slice Ber-4 Xtra</span>
+                    <div class="testimoni-bottom mt-3">
+                        <div class="text-warning">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <i class="bi {{ $i <= round($u->rating) ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                @endfor
+                                <span class="text-white ms-2">{{ number_format($u->rating, 1, ',', '.') }}</span>
                         </div>
-
-                        <div class="d-flex align-items-center justify-content-between mt-3">
-                            <div>
-                                <i class="bi bi-heart me-2"></i>
-                                <i class="bi bi-chat-left-text"></i>
-                            </div>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-half"></i>
-                                <span class="text-white ms-2">4,8</span>
-                            </div>
-                        </div>
+                        <span style="font-size: 0.85rem;">
+                            {{ \Carbon\Carbon::parse($u->created_at)->diffForHumans() }}
+                        </span>
                     </div>
                 </div>
             </div>
-
-            {{-- Testimoni 2 --}}
-            <div class="col-md-4 mb-4">
-                <div class="p-4 rounded-4 shadow-sm" style="background-color: #751A25; color: white; text-align: left;">
-                    <div class="d-flex align-items-center mb-3">
-                        <img src="{{ asset('images/profile2.jpg') }}" alt="Profil"
-                            class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
-                        <div>
-                            <h6 class="mb-0 fw-semibold">Theresa Jordan</h6>
-                        </div>
-                    </div>
-
-                    <p style="font-style: italic; line-height: 1.6; text-align: justify;">
-                        “Paket 6xtra ini favorit banget! Dagingnya banyak, potongannya tebal, bumbunya lengkap dan semua alatnya bersih serta siap pakai. Bikin acara keluarga jadi makin seru!”
-                    </p>
-
-                    <div class="mt-3">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span><i class="bi bi-fire me-1"></i> Paket Slice Ber-6 Xtra</span>
-                        </div>
-
-                        <div class="d-flex align-items-center justify-content-between mt-3">
-                            <div>
-                                <i class="bi bi-heart me-2"></i>
-                                <i class="bi bi-chat-left-text"></i>
-                            </div>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star"></i>
-                                <span class="text-white ms-2">4,7</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Testimoni 3 --}}
-            <div class="col-md-4 mb-4">
-                <div class="p-4 rounded-4 shadow-sm" style="background-color: #751A25; color: white; text-align: left;">
-                    <div class="d-flex align-items-center mb-3">
-                        <img src="{{ asset('images/profile3.jpg') }}" alt="Profil"
-                            class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
-                        <div>
-                            <h6 class="mb-0 fw-semibold">Theresa Jordan</h6>
-                        </div>
-                    </div>
-
-                    <p style="font-style: italic; line-height: 1.6; ">
-                        “Perfect buat pesta BBQ rame-rame! Pilihan dagingnya lengkap, bumbunya komplit ada bonus saus juga. Servisnya cepat dan ramah, recommended banget buat acara besar!”
-                    </p>
-
-                    <div class="mt-3">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span><i class="bi bi-fire me-1"></i> Paket Slice Ber-10 Xtra</span>
-                        </div>
-
-                        <div class="d-flex align-items-center justify-content-between mt-3">
-                            <div>
-                                <i class="bi bi-heart me-2"></i>
-                                <i class="bi bi-chat-left-text"></i>
-                            </div>
-                            <div class="text-warning">
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-fill"></i>
-                                <i class="bi bi-star-half"></i>
-                                <span class="text-white ms-2">4,8</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @empty
+            <p class="text-muted">Belum ada ulasan dari pelanggan.</p>
+            @endforelse
         </div>
 
         <div class="text-center mt-2">
@@ -377,7 +313,6 @@
                 <span class="arrow">→</span>
             </a>
         </div>
-
     </section>
 
 
