@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Riwayat Pemesanan</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- untuk ikon bintang -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
 
     <style>
@@ -414,12 +416,119 @@
             color: #888;
             font-size: 12px;
         }
+
+        /* ==== Popup Ulasan ==== */
+        .rv-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .55);
+            z-index: 10000;
+        }
+
+        .rv-card {
+            width: min(960px, 92vw);
+            max-height: 90vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 22px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+        }
+
+        .rv-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 14px;
+            color: #1a1a1a
+        }
+
+        .rv-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px
+        }
+
+        .rv-head img {
+            width: 84px;
+            height: 84px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #fafafa
+        }
+
+        .rv-name {
+            font-weight: 600;
+            font-size: 16px
+        }
+
+        .rv-label {
+            font-size: 14px;
+            color: #333;
+            margin: 12px 0 8px
+        }
+
+        .rv-stars {
+            display: flex;
+            gap: 8px;
+            font-size: 22px;
+            color: #F2C94C
+        }
+
+        .rv-star {
+            cursor: pointer
+        }
+
+        .rv-star.active {
+            color: #F2C94C
+        }
+
+        .rv-textarea {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 14px
+        }
+
+        .rv-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 16px
+        }
+
+        .rv-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 1px solid transparent
+        }
+
+        .rv-btn.rv-ghost {
+            background: #fff;
+            border-color: #ddd;
+            color: #333
+        }
+
+        .rv-btn.rv-primary {
+            background: #7B0D1E;
+            color: #fff
+        }
+
+        .rv-btn.rv-primary:hover {
+            background: #5d0a17
+        }
     </style>
 
 </head>
 
 <body>
-
     <!-- HEADER (match pemesanan) -->
     <header class="bb-header">
         <div class="bb-container bb-header__inner">
@@ -442,7 +551,7 @@
             <button type="button" data-filter="Dibatalkan">Dibatalkan</button>
         </div>
     </div>
-    
+
 
     <div class="container" id="ordersContainer">
         @forelse ($pemesanan as $order)
@@ -488,15 +597,113 @@
             </div>
 
             <div class="muted">NO. PESANAN: {{ $order->no_pesanan }}</div>
+            @php
+            $firstDetail = $order->details->first();
+            $reviewModalId = null;
+
+            if ($firstDetail) {
+            $pFirst = $firstDetail->product;
+            $imgFirst = $pFirst && $pFirst->gambar
+            ? asset('storage/'.ltrim($pFirst->gambar,'/'))
+            : asset('images/bbq.jpg');
+            $reviewModalId = 'reviewModal_'.$firstDetail->id_detail; // pakai id_detail
+            }
+            @endphp
 
             <div class="buttons" style="margin-top:10px;">
-                @if ($status === 'Selesai')
-                <button class="btn-primary">Nilai</button>
+                @if ($status === 'Selesai' && $firstDetail)
+                @if (empty($firstDetail->ulasan))
+                <button class="btn-primary" type="button" data-open-review="{{ $reviewModalId }}">
+                    Nilai
+                </button>
+                @else
+                <button class="btn-secondary" type="button" data-open-view-review="{{ $firstDetail->id_detail }}">
+                    Lihat Penilaian
+                </button>
                 @endif
+                @endif
+
                 <button class="btn-secondary" onclick="hubungiKami()">Hubungi Kami</button>
+
+                {{-- TAMPILKAN HANYA JIKA SELESAI atau DIBATALKAN --}}
+                @if (in_array($status, ['Selesai', 'Dibatalkan']))
                 <button class="btn-secondary" onclick="pesanLagi('{{ route('menu') }}')">Pesan Lagi</button>
+                @endif
+
                 <button class="btn-secondary" onclick="openDetailModal('{{ $modalId }}')">Lihat Rincian</button>
             </div>
+
+
+
+            @if ($status === 'Selesai' && $firstDetail && empty($firstDetail->ulasan))
+            <div id="{{ $reviewModalId }}" class="rv-backdrop" aria-hidden="true">
+                <div class="rv-card" role="dialog" aria-modal="true">
+                    <h3 class="rv-title">Nilai Produk</h3>
+
+                    <div class="rv-head">
+                        <img src="{{ $imgFirst }}" alt="{{ $pFirst->nama_produk ?? 'Produk' }}">
+                        <div class="rv-name">{{ $pFirst->nama_produk ?? 'Produk' }}</div>
+                    </div>
+
+                    <form action="{{ route('ulasan.store') }}" method="POST">
+                        @csrf
+                        {{-- ⬇️ gunakan id_detail --}}
+                        <input type="hidden" name="order_detail_id" value="{{ $firstDetail->id_detail }}">
+                        <input type="hidden" name="rating" value="0">
+
+                        <div class="rv-label">Kualitas Produk &amp; Pelayanan :</div>
+                        <div class="rv-stars" data-stars-for="{{ $firstDetail->id_detail }}">
+                            <i class="bi bi-star rv-star" data-val="1"></i>
+                            <i class="bi bi-star rv-star" data-val="2"></i>
+                            <i class="bi bi-star rv-star" data-val="3"></i>
+                            <i class="bi bi-star rv-star" data-val="4"></i>
+                            <i class="bi bi-star rv-star" data-val="5"></i>
+                        </div>
+
+                        <div class="rv-label">Ketik Ulasan :</div>
+                        <textarea name="comment" class="rv-textarea" placeholder="Ceritakan pengalaman kamu…"></textarea>
+
+                        <div class="rv-actions">
+                            <button type="button" class="rv-btn rv-ghost" data-close-review>Nanti Saja</button>
+                            <button type="submit" class="rv-btn rv-primary">Ya</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
+            @if ($status === 'Selesai' && $firstDetail && $firstDetail->ulasan)
+            @php
+            $rv = $firstDetail->ulasan;
+            $rounded = (int) round($rv->rating);
+            @endphp
+            <div id="viewReview_{{ $firstDetail->id_detail }}" class="rv-backdrop" aria-hidden="true">
+                <div class="rv-card" role="dialog" aria-modal="true">
+                    <h3 class="rv-title">Penilaian Kamu</h3>
+
+                    <div class="rv-head">
+                        <img src="{{ $imgFirst }}" alt="{{ $pFirst->nama_produk ?? 'Produk' }}">
+                        <div class="rv-name">{{ $pFirst->nama_produk ?? 'Produk' }}</div>
+                    </div>
+
+                    <div class="rv-label">Rating :</div>
+                    <div class="rv-stars">
+                        @for ($i = 1; $i <= 5; $i++)
+                            <i class="bi {{ $i <= $rounded ? 'bi-star-fill' : 'bi-star' }}"></i>
+                            @endfor
+                            <span style="margin-left:8px; font-weight:600;">
+                                {{ number_format((float)$rv->rating,1,',','.') }}
+                            </span>
+                    </div>
+
+                    <div class="rv-label">Ulasan :</div>
+                    <div class="rv-textarea" style="min-height:auto;">{{ $rv->komentar }}</div>
+
+                    <div class="rv-actions">
+                        <button type="button" class="rv-btn rv-primary" data-close-view-review>Tutup</button>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
 
         {{-- Modal Detail untuk pesanan ini --}}
@@ -522,7 +729,7 @@
                     <div class="info">
                         <h4>{{ $p->nama_produk ?? $d->id_produk }}</h4>
                         <p>x{{ $d->jumlah_sewa }} • {{ $d->durasi_hari }} hari</p>
-                        <p class="price">Rp{{ number_format($d->harga_satuan,0,',','.') }} /hari • Subtotal: Rp{{ number_format($d->subtotal,0,',','.') }}</p>
+                        <p class="price">Rp{{ number_format($d->subtotal,0,',','.') }}</p>
                     </div>
                 </div>
                 @endforeach
@@ -549,12 +756,19 @@
 
                 <div class="modal-actions">
                     <button class="modal-btn primary" onclick="closeAllModals()">Tutup</button>
+
+                    {{-- TAMPILKAN HANYA JIKA SELESAI atau DIBATALKAN --}}
+                    @if (in_array($status, ['Selesai', 'Dibatalkan']))
                     <button class="modal-btn ghost" onclick="pesanLagi('{{ route('menu') }}')">Pesan Lagi</button>
+                    @endif
+
                     <button class="modal-btn ghost" onclick="hubungiKami()">Hubungi Kami</button>
                 </div>
+
             </div>
         </div>
         @empty
+
         <div class="order-card" style="text-align:center;">
             <div class="muted">Belum ada riwayat pemesanan.</div>
             <div class="buttons" style="justify-content:center; margin-top:12px;">
@@ -617,6 +831,96 @@
         function hubungiKami() {
             window.location.href = "https://wa.me/6287746567500";
         }
+
+        // buka modal ulasan
+        document.addEventListener('click', (e) => {
+            const openBtn = e.target.closest('[data-open-review]');
+            if (openBtn) {
+                const id = openBtn.getAttribute('data-open-review');
+                const m = document.getElementById(id);
+                if (m) {
+                    m.style.display = 'flex';
+                    m.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            const closeBtn = e.target.closest('[data-close-review]');
+            if (closeBtn) {
+                const m = closeBtn.closest('.rv-backdrop');
+                if (m) {
+                    m.style.display = 'none';
+                    m.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                }
+            }
+        });
+
+        // klik backdrop = tutup
+        document.addEventListener('click', (e) => {
+            if (e.target.classList && e.target.classList.contains('rv-backdrop')) {
+                e.target.style.display = 'none';
+                e.target.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // ESC = tutup
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.rv-backdrop').forEach(m => {
+                    m.style.display = 'none';
+                    m.setAttribute('aria-hidden', 'true');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+        // rating bintang
+        function setStars(wrapper, val) {
+            wrapper.querySelectorAll('.rv-star').forEach(star => {
+                star.classList.toggle('active', Number(star.dataset.val) <= val);
+                // switch ikon penuh/kosong
+                star.classList.remove('bi-star', 'bi-star-fill');
+                star.classList.add(Number(star.dataset.val) <= val ? 'bi-star-fill' : 'bi-star');
+            });
+            const form = wrapper.closest('form');
+            if (form) form.querySelector('input[name="rating"]').value = val;
+        }
+
+        document.querySelectorAll('.rv-stars').forEach(wrapper => {
+            // default kosong
+            setStars(wrapper, 0);
+            wrapper.addEventListener('click', (e) => {
+                const star = e.target.closest('.rv-star');
+                if (!star) return;
+                const val = Number(star.dataset.val || 0);
+                setStars(wrapper, val);
+            });
+        });
+        // buka/tutup modal "Lihat Penilaian"
+        document.addEventListener('click', (e) => {
+            // open
+            const openViewBtn = e.target.closest('[data-open-view-review]');
+            if (openViewBtn) {
+                const idDetail = openViewBtn.getAttribute('data-open-view-review'); // id_detail
+                const modal = document.getElementById('viewReview_' + idDetail);
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            // close
+            const closeViewBtn = e.target.closest('[data-close-view-review]');
+            if (closeViewBtn) {
+                const modal = closeViewBtn.closest('.rv-backdrop');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                }
+            }
+        });
     </script>
 </body>
 

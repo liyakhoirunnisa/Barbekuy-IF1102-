@@ -372,7 +372,7 @@
         </div>
 
         <div class="text-center mt-2">
-            <a href="{{ url('ulasan') }}" class="btn-lihat-lebih">
+            <a href="{{ route('ulasan.index') }}" class="btn-lihat-lebih">
                 Lihat Lebih Banyak
                 <span class="arrow">→</span>
             </a>

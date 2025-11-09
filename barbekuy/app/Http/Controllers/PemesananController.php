@@ -410,8 +410,16 @@ class PemesananController extends Controller
     {
         $pemesanan = Pemesanan::where('id_user', auth()->id())
             ->orderByDesc('created_at')
-            ->with(['details.product']) // ⬅️ load produk sekalian
+            ->with(['details.product', 'details.ulasan']) // ⬅️ tambahkan ulasan
             ->get();
+
+        // 🔹 ambil semua ulasan milik user ini
+        $ulasan = DB::table('ulasan')
+            ->where('id_user', auth()->id())
+            ->get(['id_detail', 'id']);
+
+        // 🔹 buat map: id_detail -> id_ulasan
+        $reviewMap = $ulasan->pluck('id', 'id_detail')->toArray();
 
         return view('riwayat', compact('pemesanan'));
     }

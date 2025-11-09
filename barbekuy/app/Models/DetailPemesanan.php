@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class DetailPemesanan extends Model
 {
     protected $table = 'detail_pemesanan';
-    protected $primaryKey = 'id_detail_pesanan';
+
+    // ⬇️ GANTI ini
+    // protected $primaryKey = 'id_detail_pesanan';
+    protected $primaryKey = 'id_detail';   // <- sesuai migration
+
     public $timestamps = true;
     protected $keyType = 'int';
     public $incrementing = true;
@@ -17,14 +21,12 @@ class DetailPemesanan extends Model
         'id_produk',
         'jumlah_sewa',
         'durasi_hari',
-        'harga_satuan',
         'subtotal',
     ];
 
     protected $casts = [
         'jumlah_sewa'  => 'integer',
         'durasi_hari'  => 'integer',
-        'harga_satuan' => 'integer',
         'subtotal'     => 'integer',
     ];
 
@@ -45,5 +47,9 @@ class DetailPemesanan extends Model
     public function product()
     {
         return $this->belongsTo(Produk::class, 'id_produk', 'id_produk');
+    }
+    public function ulasan()
+    {
+        return $this->hasOne(Ulasan::class, 'id_detail', 'id_detail');
     }
 }

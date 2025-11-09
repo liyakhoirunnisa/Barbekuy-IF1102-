@@ -11,6 +11,7 @@ use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PemesananController;
 use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\UlasanController;
 
 // ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
 use App\Http\Controllers\PengaturanController as AdminPengaturanController;
@@ -114,6 +115,10 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/riwayat/pesanan', function () {
         return redirect()->route('riwayat.semua');
     })->name('pemesanan.riwayat');
+
+
+    Route::get('/ulasan', [UlasanController::class, 'index'])->name('ulasan.index');
+    Route::post('/ulasan', [UlasanController::class, 'store'])->name('ulasan.store');
 });
 
 // 💬 Chat (dummy, simpan di session) – auth + role:user
@@ -204,36 +209,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         // Route::post('/verify',   [AdminPengaturanController::class, 'verify'])->name('verify');
     });
 });
-
-/*
-|--------------------------------------------------------------------------
-| ⭐ Halaman Ulasan (Terbuka)
-|--------------------------------------------------------------------------
-*/
-Route::get('/ulasan', function () {
-    $reviews = [
-        (object)[
-            'user_name'    => 'Theresa Jordan',
-            'review_text'  => 'Pas banget buat BBQ kecil-kecilan bareng temen! Dagingnya fresh, bumbunya lengkap, dan porsinya pas.',
-            'product_name' => 'Paket Slice Ber-4 Xtra',
-            'rating'       => 5,
-        ],
-        (object)[
-            'user_name'    => 'Daniel Smith',
-            'review_text'  => 'Pelayanannya cepat dan ramah, cocok buat acara keluarga.',
-            'product_name' => 'Paket Premium Grill',
-            'rating'       => 5,
-        ],
-        (object)[
-            'user_name'    => 'Alicia Tan',
-            'review_text'  => 'Daging segar tapi sausnya agak kurang banyak. Tetap mantap!',
-            'product_name' => 'Paket Slice Duo',
-            'rating'       => 4,
-        ],
-    ];
-
-    return view('ulasan', compact('reviews'));
-})->name('ulasan.index');
 
 /*
 |--------------------------------------------------------------------------
