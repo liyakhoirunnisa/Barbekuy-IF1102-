@@ -12,6 +12,7 @@ use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PemesananController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\UlasanController;
+use App\Http\Controllers\NotifikasiController;
 
 // ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
 use App\Http\Controllers\PengaturanController as AdminPengaturanController;
@@ -190,7 +191,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/produk/update/{id}', [ProdukController::class, 'update'])->name('produk.update');
     Route::delete('/produk/delete/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
 
-    Route::view('/notifikasi', 'admin.notifikasi')->name('admin.notifikasi');
+    Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('admin.notifikasi.index');
+    Route::post('/notifikasi/{id}/read', [NotifikasiController::class, 'markRead'])->name('admin.notifikasi.read');
+    Route::post('/notifikasi/read-all', [NotifikasiController::class, 'markAllRead'])->name('admin.notifikasi.readAll');
+    Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy'])->name('admin.notifikasi.destroy');
+    Route::delete('/notifikasi', [NotifikasiController::class, 'bulkDestroy'])->name('admin.notifikasi.bulkDestroy');
+    
     Route::view('/pembayaran', 'admin.pembayaran')->name('admin.pembayaran');
     Route::view('/pesan', 'admin.pesan')->name('admin.pesan');
 

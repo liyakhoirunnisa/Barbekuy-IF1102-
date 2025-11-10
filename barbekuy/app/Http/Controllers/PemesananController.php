@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Midtrans\Config;
 use Midtrans\Snap;
+use App\Models\User;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\NotifikasiPemesanan;
+
 
 
 class PemesananController extends Controller
@@ -126,7 +130,9 @@ class PemesananController extends Controller
 
             DB::commit();
 
-            // === CEK METODE PEMBAYARAN ===
+            // === KIRIM NOTIFIKASI SETELAH PESANAN BERHASIL TERSIMPAN ===
+            $this->notifyAdmins($p);
+
             // === CEK METODE PEMBAYARAN ===
             if ($validated['metode_pembayaran'] === 'cod') {
                 $p->update(['status_pesanan' => 'Sedang Proses']);
@@ -174,6 +180,7 @@ class PemesananController extends Controller
 
                 // langsung pindah ke halaman Midtrans (tab yang sama)
                 return redirect()->away($snap->redirect_url);
+
             }
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -322,6 +329,9 @@ class PemesananController extends Controller
             $request->session()->forget('checkout_items');
 
             DB::commit();
+            // === KIRIM NOTIFIKASI SETELAH PESANAN MULTI ITEM TERSIMPAN ===
+            $this->notifyAdmins($p);
+
             return redirect()->route('riwayat.semua')
                 ->with('success', "Pesanan {$p->no_pesanan} berhasil dibuat.");
         } catch (\Throwable $e) {
@@ -422,5 +432,32 @@ class PemesananController extends Controller
         $reviewMap = $ulasan->pluck('id', 'id_detail')->toArray();
 
         return view('riwayat', compact('pemesanan'));
+    }
+
+    /**
+     * Kirim notifikasi ke semua admin bahwa ada pemesanan baru.
+     */
+    // app/Http/Controllers/PemesananController.php
+    private function notifyAdmins($order, ?string $explicitName = null): void
+    {
+        try {
+            $customer = Auth::user();
+            $nama = $explicitName
+                ?? ($customer?->name ?? $customer?->nama ?? $order->nama_penerima ?? 'Pelanggan');
+
+            // PENTING: pakai nomor transaksi
+            $nomor = $order->no_pesanan ?? (string)($order->id_pesanan ?? $order->id);
+            $pesan = "{$nama} melakukan pemesanan #{$nomor}";
+
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            if ($admins->isEmpty()) return;
+
+            \Illuminate\Support\Facades\Notification::send(
+                $admins,
+                new \App\Notifications\NotifikasiPemesanan($nama, $pesan, $nomor) // kirim NO
+            );
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

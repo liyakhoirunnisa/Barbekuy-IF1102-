@@ -1,3 +1,10 @@
+@php
+// hitung jumlah notifikasi belum dibaca untuk admin yang login
+$notifUnreadCount = auth()->check()
+? (auth()->user()->unreadNotifications()->count() ?? 0)
+: 0;
+@endphp
+
 <style>
   * {
     margin: 0;
@@ -155,10 +162,6 @@
     <a href="{{ route('admin.produk') }}" class="menu-item {{ request()->routeIs('admin.produk') ? 'active' : '' }}">
       <i class="fa-solid fa-box"></i> Produk
     </a>
-    <a href="{{ route('admin.pembayaran') }}" class="menu-item {{ request()->routeIs('admin.pembayaran') ? 'active' : '' }}">
-      <i class="fa-solid fa-credit-card"></i> Pembayaran
-    </a>
-    </a>
     <a href="{{ route('admin.pengaturan') }}" class="menu-item {{ request()->routeIs('admin.pengaturan') ? 'active' : '' }}">
       <i class="fa-solid fa-gear"></i> Pengaturan
     </a>
@@ -167,9 +170,11 @@
 
 <main class="main-content">
   <div class="topbar">
-    <a href="{{ route('admin.notifikasi') }}">
+    <a href="{{ route('admin.notifikasi.index') }}" title="Notifikasi">
       <i class="fa-solid fa-bell"></i>
-      <span class="badge">2</span>
+      @if(($notifUnreadCount ?? 0) > 0)
+      <span class="badge">{{ $notifUnreadCount }}</span>
+      @endif
     </a>
 
     <div class="profile">
