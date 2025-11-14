@@ -53,6 +53,14 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/logout', 'logout')->name('logout');
 });
 
+// 🌐 Login dengan Google
+Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])
+    ->name('auth.google.redirect');
+
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])
+    ->name('auth.google.callback');
+
+
 /*
 |--------------------------------------------------------------------------
 | 🌐 Halaman Umum

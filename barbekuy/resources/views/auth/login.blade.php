@@ -195,7 +195,9 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email" value="{{ old('email') }}" placeholder="Masukkan email" required>
+                        <input type="email" class="form-control" name="email"
+                            value="{{ old('email', request()->cookie('remember_email')) }}"
+                            placeholder="Masukkan email" required>
                     </div>
 
                     <div class="mb-3">
@@ -205,7 +207,8 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember"
+                                {{ request()->cookie('remember_email') ? 'checked' : '' }}>
                             <label class="form-check-label" for="remember">Ingat saya</label>
                         </div>
                         <a href="#">Lupa kata sandi?</a>
@@ -219,10 +222,10 @@
 
                     <div class="divider"><span>Atau masuk dengan</span></div>
 
-                    <button class="google-btn" type="button">
+                    <a href="{{ route('auth.google.redirect') }}" class="google-btn">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google Logo">
                         Google
-                    </button>
+                    </a>
                 </div>
             </div>
 

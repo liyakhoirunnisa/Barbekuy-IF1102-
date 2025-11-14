@@ -1,5 +1,6 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,109 +9,252 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #fff; }
-        .register-container { display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 20px; }
-        .register-card { display: flex; flex-direction: row; max-width: 950px; width: 100%; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); background-color: #fff; overflow: hidden; }
-        .register-left { flex: 1; padding: 40px; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto; }
-        .logo-container { margin-top: 30px; margin-bottom: 25px; text-align: left; }
-        .logo { width: 120px; }
-        .register-right { flex: 1; height: 768px; align-self: center; margin-right: 40px; margin-left: 20px; border-radius: 15px; background-image: url('{{ asset("images/loginpage.png") }}'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .btn-register { background-color: #800000; color: #fff; border: none; padding: 10px; font-weight: 500; border-radius: 5px; width: 100%; transition: 0.3s ease; }
-        .btn-register:hover { background-color: #a00000; }
-        .btn-back { display: inline-block; color: #800000; text-decoration: none; font-weight: 500; transition: 0.3s ease; }
-        .btn-back:hover { color: #a00000; text-decoration: underline; }
-        a { color: #800000; text-decoration: none; transition: 0.3s ease; }
-        a:hover { color: #a00000; text-decoration: underline; }
-        .error-text { color: #d9534f; font-size: 0.85rem; margin-top: 5px; }
-        .google-btn { border: 1px solid #ddd; border-radius: 8px; padding: 8px 16px; background: white; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
-        .google-btn:hover { background-color: #f8f8f8; transform: scale(1.03); }
-        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #666; }
-        .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid #ddd; }
-        .divider:not(:empty)::before { margin-right: 0.75em; }
-        .divider:not(:empty)::after { margin-left: 0.75em; }
-        @media (max-width: 768px) { .register-card { flex-direction: column; width: 95%; height: auto; } .register-right { height: 200px; } }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fff;
+        }
+
+        .register-container {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .register-card {
+            display: flex;
+            flex-direction: row;
+            max-width: 950px;
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            overflow: hidden;
+        }
+
+        .register-left {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow-y: auto;
+        }
+
+        .logo-container {
+            margin-top: 30px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .logo {
+            width: 120px;
+        }
+
+        .register-right {
+            flex: 1;
+            height: 768px;
+            align-self: center;
+            margin-right: 40px;
+            margin-left: 20px;
+            border-radius: 15px;
+            background-image: url('{{ asset("images/loginpage.png") }}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .btn-register {
+            background-color: #800000;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            font-weight: 500;
+            border-radius: 5px;
+            width: 100%;
+            transition: 0.3s ease;
+        }
+
+        .btn-register:hover {
+            background-color: #a00000;
+        }
+
+        .btn-back {
+            display: inline-block;
+            color: #800000;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s ease;
+        }
+
+        .btn-back:hover {
+            color: #a00000;
+            text-decoration: underline;
+        }
+
+        a {
+            color: #800000;
+            text-decoration: none;
+            transition: 0.3s ease;
+        }
+
+        a:hover {
+            color: #a00000;
+            text-decoration: underline;
+        }
+
+        .error-text {
+            color: #d9534f;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .google-btn {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 8px 16px;
+            background: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .google-btn:hover {
+            background-color: #f8f8f8;
+            transform: scale(1.03);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: 0.75em;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: 0.75em;
+        }
+
+        @media (max-width: 768px) {
+            .register-card {
+                flex-direction: column;
+                width: 95%;
+                height: auto;
+            }
+
+            .register-right {
+                height: 200px;
+            }
+        }
     </style>
 </head>
+
 <body>
-<div class="register-container">
-    <div class="register-card">
-        <div class="register-left">
-            <div class="logo-container">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo Barbekuy" class="logo">
-            </div>
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-left">
+                <div class="logo-container">
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo Barbekuy" class="logo">
+                </div>
 
-            {{-- Kembali ke halaman login --}}
-            <a href="{{ route('login') }}" class="btn-back mb-3">&larr; Kembali</a>
+                {{-- Kembali ke halaman login --}}
+                <a href="{{ route('login') }}" class="btn-back mb-3">&larr; Kembali</a>
 
-            <h2>{{ request()->is('daftar-admin') ? 'Daftar Admin' : 'Daftar' }}</h2>
-            <p>{{ request()->is('daftar-admin') ? 'Buat akun admin untuk mengelola sistem.' : 'Mari kita siapkan agar anda dapat mengakses akun anda.' }}</p>
+                <h2>{{ request()->is('daftar-admin') ? 'Daftar Admin' : 'Daftar' }}</h2>
+                <p>{{ request()->is('daftar-admin') ? 'Buat akun admin untuk mengelola sistem.' : 'Mari kita siapkan agar anda dapat mengakses akun anda.' }}</p>
 
-            {{-- Pesan sukses atau error --}}
-            @if (session('success'))
+                {{-- Pesan sukses atau error --}}
+                @if (session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
+                @endif
 
-            @if ($errors->any())
+                @if ($errors->any())
                 <div class="alert alert-danger">
                     <strong>Periksa kembali isian Anda:</strong>
                     <ul class="mb-0 ps-3">
                         @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
+                        <li>{{ $error }}</li>
                         @endforeach
                     </ul>
                 </div>
-            @endif
+                @endif
 
-            {{-- FORM PENDAFTARAN --}}
-            <form method="POST" action="{{ request()->is('daftar-admin') ? route('admin.daftar') : route('daftar.process') }}">
-                @csrf
+                {{-- FORM PENDAFTARAN --}}
+                <form method="POST" action="{{ request()->is('daftar-admin') ? route('admin.daftar') : route('daftar.process') }}">
+                    @csrf
 
-                <div class="mb-3">
-                    <label class="form-label">Nama Lengkap</label>
-                    <input type="text" class="form-control" name="name" value="{{ old('name') }}" placeholder="Nama lengkap" required>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Lengkap</label>
+                        <input type="text" class="form-control" name="name" value="{{ old('name') }}" placeholder="Nama lengkap" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ old('email') }}" placeholder="Masukkan email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Kata Sandi</label>
+                        <input type="password" class="form-control" name="password" placeholder="Masukkan kata sandi" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Konfirmasi Kata Sandi</label>
+                        <input type="password" class="form-control" name="password_confirmation" placeholder="Ulangi kata sandi" required>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                        <label class="form-check-label" for="terms">
+                            Saya setuju dengan <a href="#">Syarat</a> dan <a href="#">Kebijakan Privasi</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-register">
+                        {{ request()->is('daftar-admin') ? 'Buat Akun Admin' : 'Buat Akun' }}
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    @if (request()->is('daftar-admin'))
+                    {{-- UNTUK HALAMAN DAFTAR ADMIN --}}
+                    <p>Sudah punya akun admin? <a href="{{ route('login') }}">Masuk</a></p>
+
+                    <div class="divider"><span>Atau daftar dengan</span></div>
+                    <a href="{{ route('auth.google.redirect') }}" class="google-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google Logo">
+                        Google
+                    </a>
+                    @else
+                    {{-- UNTUK HALAMAN DAFTAR USER BIASA --}}
+                    <p>Sudah punya akun? <a href="{{ route('login') }}">Masuk</a></p>
+
+                    <div class="divider"><span>Atau daftar dengan</span></div>
+                    <a href="{{ route('auth.google.redirect') }}" class="google-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google Logo">
+                        Google
+                    </a>
+                    @endif
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" name="email" value="{{ old('email') }}" placeholder="Masukkan email" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Kata Sandi</label>
-                    <input type="password" class="form-control" name="password" placeholder="Masukkan kata sandi" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Konfirmasi Kata Sandi</label>
-                    <input type="password" class="form-control" name="password_confirmation" placeholder="Ulangi kata sandi" required>
-                </div>
-
-                <div class="form-check mb-3">
-                    <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
-                    <label class="form-check-label" for="terms">
-                        Saya setuju dengan <a href="#">Syarat</a> dan <a href="#">Kebijakan Privasi</a>
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-register">
-                    {{ request()->is('daftar-admin') ? 'Buat Akun Admin' : 'Buat Akun' }}
-                </button>
-            </form>
-
-            @if (!request()->is('daftar-admin'))
-            <div class="text-center mt-3">
-                <p>Sudah punya akun? <a href="{{ route('login') }}">Masuk</a></p>
-                <div class="divider"><span>Atau daftar dengan</span></div>
-                <button class="google-btn" type="button">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google Logo">
-                    Google
-                </button>
             </div>
-            @endif
-        </div>
 
-        <div class="register-right"></div>
+            <div class="register-right"></div>
+        </div>
     </div>
-</div>
 </body>
+
 </html>
