@@ -544,7 +544,7 @@
         <div class="bb-container tabs">
             <button type="button" class="active" data-filter="all">Semua</button>
             <button type="button" data-filter="Belum Bayar">Belum Bayar</button>
-            <button type="button" data-filter="Menunggu Konfirmasi">Sedang Proses</button>
+            <button type="button" data-filter="Sedang Proses">Sedang Proses</button>
             <button type="button" data-filter="Disiapkan">Disiapkan</button>
             <button type="button" data-filter="Disewa">Disewa</button>
             <button type="button" data-filter="Selesai">Selesai</button>
@@ -561,6 +561,27 @@
         $akhir = \Carbon\Carbon::parse($order->tanggal_pengembalian)->translatedFormat('d F Y');
         $totalQty = $order->details->sum('jumlah_sewa');
         $modalId = 'detailModal_'.$order->id_pesanan;
+
+        // anggap total_harga = subtotal
+        $subtotalDisplay = $order->total_harga;
+        $biayaLayananFix = 1000;
+        $totalDisplay = $subtotalDisplay + $biayaLayananFix;
+
+        // === Teks metode pembayaran (untuk kartu & modal) ===
+        $metodeDisplay = 'Tidak diketahui';
+
+        if ($order->metode_pembayaran === 'cod') {
+        $metodeDisplay = 'Bayar di Tempat (COD)';
+        } elseif ($order->metode_pembayaran === 'midtrans') {
+        if ($order->payment_channel) {
+        // contoh: "Bayar Online (BCA VA)", "Bayar Online (GoPay)", dll.
+        $metodeDisplay = 'Bayar Online (' . $order->payment_channel . ')';
+        } else {
+        $metodeDisplay = 'Bayar Online';
+        }
+        } elseif (!empty($order->metode_pembayaran)) {
+        $metodeDisplay = $order->metode_pembayaran;
+        }
         @endphp
 
         <div class="order-card order-item" data-status="{{ $status }}">
@@ -593,10 +614,11 @@
 
             <div class="total">
                 <span>Total {{ $totalQty }} Produk</span>
-                <strong>Rp{{ number_format($order->total_harga,0,',','.') }}</strong>
+                <strong>Rp{{ number_format($totalDisplay,0,',','.') }}</strong>
             </div>
 
             <div class="muted">NO. PESANAN: {{ $order->no_pesanan }}</div>
+            <div class="muted">Metode Pembayaran: {{ $metodeDisplay }}</div>
             @php
             $firstDetail = $order->details->first();
             $reviewModalId = null;
@@ -632,8 +654,6 @@
 
                 <button class="btn-secondary" onclick="openDetailModal('{{ $modalId }}')">Lihat Rincian</button>
             </div>
-
-
 
             @if ($status === 'Selesai' && $firstDetail && empty($firstDetail->ulasan))
             <div id="{{ $reviewModalId }}" class="rv-backdrop" aria-hidden="true">
@@ -749,9 +769,18 @@
 
                 <div class="modal-section">
                     <div class="label">Rincian Pembayaran</div>
-                    <p class="label" style="margin-top:8px;">Total Pembayaran: Rp{{ number_format($order->total_harga,0,',','.') }}</p>
-                    {{-- Jika kamu simpan metode pembayaran di header, tampilkan di sini --}}
-                    {{-- <p>Metode Pembayaran: {{ strtoupper($order->metode_pembayaran) }}</p> --}}
+
+                    @php
+                    // anggap total_harga = subtotal (belum termasuk biaya layanan)
+                    $subtotal = $order->total_harga;
+                    $biayaLayanan = 1000;
+                    $totalBayar = $subtotal + $biayaLayanan;
+                    @endphp
+
+                    <p style="margin-top:8px;">Subtotal Pesanan: Rp{{ number_format($subtotal, 0, ',', '.') }}</p>
+                    <p>Biaya Layanan: Rp{{ number_format($biayaLayanan, 0, ',', '.') }}</p>
+                    <p class="label">Total Pembayaran: Rp{{ number_format($totalBayar, 0, ',', '.') }}</p>
+                    <p>Metode Pembayaran: {{ $metodeDisplay }}</p>
                 </div>
 
                 <div class="modal-actions">

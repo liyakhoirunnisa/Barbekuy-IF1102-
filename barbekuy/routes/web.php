@@ -165,21 +165,17 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| ⚙️ Settings USER (siapa pun yang login)
+| ⚙️ Settings USER 
 |--------------------------------------------------------------------------
 */
-// ✅ Halaman pengaturan (GET) – cocok dengan route('pengaturan') di navbar
-Route::middleware(['auth'])->get('/pengaturan', function () {
-    return view('pengaturan'); // resources/views/pengaturan.blade.php
-})->name('pengaturan');
 
 // ✅ Aksi simpan (POST)
-Route::middleware(['auth'])->group(function () {
-    Route::post('/pengaturan/profile', [PengaturanUserController::class, 'updateProfile'])->name('pengaturan.profile.update');
+Route::middleware(['auth', 'role:user'])->group(function () {
+    Route::get('/pengaturan', [PengaturanUserController::class, 'index'])->name('pengaturan');
+    Route::post('/pengaturan/profil', [PengaturanUserController::class, 'updateProfile'])->name('pengaturan.profil.update');
     Route::post('/pengaturan/password', [PengaturanUserController::class, 'updatePassword'])->name('pengaturan.password.update');
-    Route::post('/pengaturan/notif',   [PengaturanUserController::class, 'updateNotif'])->name('pengaturan.notif.update');
-    Route::post('/pengaturan/verify',  [PengaturanUserController::class, 'verify'])->name('pengaturan.verify');
 });
+
 
 /*
 |--------------------------------------------------------------------------

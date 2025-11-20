@@ -12,6 +12,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       font-family: 'Poppins', sans-serif;
       background-color: #fff;
@@ -23,7 +29,7 @@
       font-weight: 800;
       font-size: 2rem;
       text-align: center;
-      margin: 50px 0 60px 0;
+      margin: 30px 0 10px 0;
     }
 
     .judul-menu {
@@ -33,39 +39,62 @@
       margin: 0 0 30px 0;
     }
 
+    /* ============================
+     CARD MENU – LAYOUT DESKTOP
+     ============================ */
     article {
       border: 1px solid #eee;
       border-radius: 16px;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
-      transition: transform 0.2s ease;
-      padding: 20px;
       background-color: #fff;
+      padding: 20px;
       height: 100%;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
+
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto auto auto;
+      /* ⬇️ Desktop: title → desc → price → actions */
+      grid-template-areas:
+        "title   image"
+        "desc    image"
+        "price   image"
+        "actions image";
+      column-gap: 18px;
       align-items: center;
-    }
 
-    article .flex-grow-1 {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    article small.text-muted {
-      text-align: justify;
-      flex-grow: 1;
-    }
-
-    article .d-flex.align-items-center.gap-2.mt-2 {
-      margin-top: auto;
+      transition: transform 0.2s ease;
     }
 
     article:hover {
       transform: translateY(-4px);
     }
 
+    /* mapping area grid */
+    .menu-title {
+      grid-area: title;
+    }
+
+    .menu-price {
+      grid-area: price;
+    }
+
+    .menu-desc {
+      grid-area: desc;
+    }
+
+    .menu-actions {
+      grid-area: actions;
+    }
+
+    .menu-image {
+      grid-area: image;
+    }
+
+    .menu-desc {
+      text-align: justify;
+    }
+
+    /* gambar di dalam card */
     article img {
       width: 110px;
       height: 110px;
@@ -133,10 +162,105 @@
       text-decoration: underline;
     }
 
-    article small.text-muted {
-      text-align: justify;
+    /* ============================
+     PADDING RESPONSIVE (bukan desktop)
+     ============================ */
+    @media (max-width: 992px) {
+      .responsive-padding {
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+      }
+    }
+
+    /* ============================
+     LAYAR ≤ 768px (HP)
+     Urutan: nama → gambar → deskripsi → harga → tombol
+     ============================ */
+    @media (max-width: 768px) {
+
+      h2 {
+        font-size: 1.6rem;
+        margin: 30px 0 40px 0;
+      }
+
+      article {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "title"
+          "image"
+          "desc"
+          "price"
+          "actions";
+        text-align: center;
+        padding: 15px;
+      }
+
+      .menu-image {
+        justify-self: center;
+        margin: 8px 0;
+      }
+
+      article img {
+        width: 120px;
+        height: 120px;
+      }
+
+      .menu-title {
+        font-size: 1.1rem;
+      }
+
+      .menu-desc {
+        text-align: center !important;
+        margin-bottom: 6px;
+      }
+
+      .menu-price {
+        margin-bottom: 8px;
+        justify-self: center;
+      }
+
+      .menu-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .badge-price {
+        top: 8px;
+        right: 8px;
+        font-size: 0.75rem;
+        padding: 3px 6px;
+      }
+
+      .col-md-6 {
+        width: 100%;
+      }
+    }
+
+    /* ============================
+     LAYAR SANGAT KECIL (≤ 430px)
+     ============================ */
+    @media (max-width: 430px) {
+
+      article img {
+        width: 100px;
+        height: 100px;
+      }
+
+      .btn-beli {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+
+      .ikon-keranjang i {
+        font-size: 1.3rem;
+      }
     }
   </style>
+
+
 </head>
 
 <body>
@@ -144,50 +268,61 @@
   {{-- Navbar --}}
   @include('layouts.navbar')
 
-  <div class="container mt-5 mb-5">
+  <div class="container mt-5 mb-5 responsive-padding">
     <h2><span class="judul-menu">Pilih Paket Barbekuy<br>Sesuaikan dengan Selera Kamu</span></h2>
 
     <div class="row gy-4 align-items-stretch">
       @foreach ($produk as $item)
       <div class="col-md-6">
-        <article class="d-flex align-items-center justify-content-between">
-          <div class="flex-grow-1 me-3">
-            <h5 class="fw-semibold mb-1">{{ $item->nama_produk }}</h5>
-            <p class="fw-bold mb-1" style="color: #751A25;">Rp{{ number_format($item->harga, 0, ',', '.') }}</p>
-            <small class="text-muted d-block mb-2">{{ $item->deskripsi }}</small>
-            <div class="d-flex align-items-center gap-2 mt-2">
-              <!-- Ikon Troli -->
-              <button
-                type="button"
-                class="ikon-keranjang border-0 bg-transparent"
-                data-produk="{{ $item->id_produk }}"
-                data-harga="{{ $item->harga }}">
-                <i class="bi bi-cart3 fs-5"></i>
-              </button>
+        <article>
+          <!-- NAMA PAKET -->
+          <h5 class="fw-semibold mb-1 menu-title">
+            {{ $item->nama_produk }}
+          </h5>
 
-              <!-- Tombol utama: Beli Sekarang -->
-              <button
-                type="button"
-                class="btn-beli btn-tanggal"
-                data-produk="{{ $item->id_produk }}"
-                data-harga="{{ $item->harga }}">
-                Beli
-              </button>
-            </div>
+          <!-- DESKRIPSI -->
+          <small class="text-muted d-block mb-2 menu-desc">
+            {{ $item->deskripsi }}
+          </small>
+
+          <!-- HARGA -->
+          <p class="fw-bold mb-1 menu-price" style="color: #751A25;">
+            Rp{{ number_format($item->harga, 0, ',', '.') }}
+          </p>
+
+          <!-- BUTTON KERANJANG & BELI -->
+          <div class="d-flex align-items-center gap-2 mt-2 menu-actions">
+            <button
+              type="button"
+              class="ikon-keranjang border-0 bg-transparent"
+              data-produk="{{ $item->id_produk }}"
+              data-harga="{{ $item->harga }}">
+              <i class="bi bi-cart3 fs-5"></i>
+            </button>
+
+            <button
+              type="button"
+              class="btn-beli btn-tanggal"
+              data-produk="{{ $item->id_produk }}"
+              data-harga="{{ $item->harga }}">
+              Beli
+            </button>
           </div>
 
-          <div class="position-relative">
+          <!-- GAMBAR -->
+          <div class="position-relative menu-image">
             <img src="{{ asset('storage/' . $item->gambar) }}" alt="{{ $item->nama_produk }}">
             <span class="badge-price">{{ number_format($item->harga/1000, 0) }}K</span>
           </div>
         </article>
       </div>
       @endforeach
+
     </div>
   </div>
 
   {{-- Footer --}}
-  <footer id="kontak" style="background-color: #751A25; color: white; padding: 50px 0 20px 0;">
+  <footer id="kontak" class="responsive-padding" style="background-color: #751A25; color: white; padding: 50px 0 20px 0;">
     <div class="container">
       <div class="row align-items-start mb-4">
         <!-- Logo -->
@@ -209,7 +344,9 @@
             <a href="https://maps.app.goo.gl/2JV4KyWNrhMcZGN6A?g_st=aw" target="_blank" class="text-white text-decoration-none">
               Sumampir Kulon, Sumampir, Purwokerto Utara, Banyumas Regency, Central Java 53125
             </a><br>
-            <a href="https://wa.me/6287746567500" target="_blank" class="text-white text-decoration-none d-flex align-items-center mt-1">
+            <a href="https://wa.me/6287746567500"
+              target="_blank"
+              class="text-white text-decoration-none d-flex align-items-center justify-content-center justify-content-md-start mt-1">
               <i class="bi bi-whatsapp me-2"></i>
               <span>+6287746567500</span>
             </a>

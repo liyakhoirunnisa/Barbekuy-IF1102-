@@ -22,7 +22,11 @@ class Pemesanan extends Model
         'total_harga',
         'catatan_tambahan',
         'status_pesanan',
-        'ktp_path', // ✅ tambahkan ini
+        'ktp_path',
+
+        // ⬇️ tambahkan ini
+        'metode_pembayaran',
+        'payment_channel',
     ];
 
     // ✅ Casting tanggal ke Carbon

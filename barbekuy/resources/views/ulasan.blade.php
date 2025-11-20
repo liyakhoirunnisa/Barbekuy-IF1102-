@@ -95,6 +95,82 @@
         align-items: center;
         justify-content: center;
     }
+
+    /* ============================
+   RESPONSIVE ULASAN & RATING
+   ============================ */
+
+    /* HP kecil (max 576px) */
+    @media (max-width: 576px) {
+
+        /* Container utama */
+        main {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
+        /* Kartu ulasan */
+        article {
+            padding: 1rem !important;
+        }
+
+        /* Header ulasan: user + waktu + rating */
+        article header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        /* Info user */
+        article header>div:first-child {
+            width: 100%;
+        }
+
+        /* Rating bintang */
+        article header .flex.items-center.gap-1 {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        /* Komentar */
+        article p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Nama produk */
+        article .flex.items-center.gap-2 {
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Tablet (max-width: 768px) */
+    @media (max-width: 768px) {
+
+        main {
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
+
+        article {
+            padding: 1.2rem;
+        }
+
+        article p {
+            font-size: 0.95rem;
+        }
+    }
+
+    /* Dekstop kecil (max 1024px) */
+    @media (max-width: 1024px) {
+
+        main {
+            max-width: 800px;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+    }
 </style>
 
 <body class="bg-white min-h-screen text-[#751A25] font-sans">
@@ -108,7 +184,7 @@
         </div>
     </header>
 
-    <main class="px-4 py-6 space-y-5 max-w-3xl mx-auto">
+    <main class="bb-container px-4 py-6 space-y-5">
         {{-- Flash success/error --}}
         @if (session('success'))
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 px-4 py-3">

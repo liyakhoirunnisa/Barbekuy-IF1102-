@@ -9,31 +9,58 @@ use Illuminate\Support\Facades\Storage;
 
 class PengaturanUserController extends Controller
 {
+    /**
+     * Tampilkan halaman pengaturan user (customer).
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user(); // kalau mau dipakai di view
+
+        return view('pengaturan', compact('user'));
+    }
+
     /** 🧍 Update profil pengguna */
     public function updateProfile(Request $request)
     {
         $user = $request->user();
 
+        // ✅ Field disesuaikan dengan form di pengaturan.blade.php
         $validated = $request->validate([
-            'first_name' => ['required','string','max:100'],
-            'last_name'  => ['required','string','max:100'],
-            'email'      => ['required','email','max:255', Rule::unique('users','email')->ignore($user->id)],
-            'phone'      => ['nullable','string','max:30'],
-            'avatar'     => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name'  => ['required', 'string', 'max:100'],
+            'email'      => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'phone'   => ['nullable', 'string', 'max:30'],
+            'gender'  => ['nullable', Rule::in(['L', 'P'])],
+            'address' => ['nullable', 'string', 'max:2000'],
+            'avatar'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
+        // ✅ Handle avatar (opsional)
         if ($request->hasFile('avatar')) {
+            // hapus file lama jika ada
             if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
                 Storage::disk('public')->delete($user->avatar_path);
             }
+
             $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
 
+        // avatar bukan kolom di tabel, jadi kita buang
+        unset($validated['avatar']);
+
+        // ✅ Update user dengan data tervalidasi
         $user->update([
             'first_name'  => $validated['first_name'],
             'last_name'   => $validated['last_name'],
             'email'       => $validated['email'],
-            'phone'       => $validated['phone'] ?? null,
+            'phone'       => $validated['phone']   ?? $user->phone,
+            'gender'      => $validated['gender']  ?? $user->gender,
+            'address'     => $validated['address'] ?? $user->address,
             'avatar_path' => $validated['avatar_path'] ?? $user->avatar_path,
         ]);
 
@@ -46,56 +73,26 @@ class PengaturanUserController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'old_password'          => ['required','string'],
-            'password'              => ['required','string','min:8','confirmed'],
-            'password_confirmation' => ['required','string','min:8'],
+            'old_password'          => ['required', 'string'],
+            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'password_confirmation' => ['required', 'string', 'min:8'],
         ]);
 
+        // cek password lama
         if (!Hash::check($request->old_password, $user->password)) {
-            return back()->withErrors(['old_password' => 'Password lama tidak sesuai.'])->withInput();
+            return back()
+                ->withErrors(['old_password' => 'Password lama tidak sesuai.'])
+                ->withInput();
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        // simpan password baru
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }
 
-    /** 🔔 Update notifikasi */
-    public function updateNotif(Request $request)
-    {
-        $user = $request->user();
-
-        $user->update([
-            'notif_email'   => $request->boolean('notif_email'),
-            'notif_message' => $request->boolean('notif_message'),
-            'notif_payment' => $request->boolean('notif_payment'),
-        ]);
-
-        return back()->with('success', 'Pengaturan notifikasi tersimpan.');
-    }
-
-    /** ✅ Verifikasi akun */
-    public function verify(Request $request)
-    {
-        $user = $request->user();
-
-        $request->validate([
-            'verification_code' => ['required','string','size:6'],
-        ]);
-
-        if (!$user->verification_code) {
-            return back()->withErrors(['verification_code' => 'Tidak ada kode yang menunggu verifikasi.'])->withInput();
-        }
-
-        if ($request->verification_code !== $user->verification_code) {
-            return back()->withErrors(['verification_code' => 'Kode verifikasi salah.'])->withInput();
-        }
-
-        $user->update([
-            'email_verified_at' => now(),
-            'verification_code' => null,
-        ]);
-
-        return back()->with('success', 'Akun berhasil diverifikasi.');
-    }
+    // 🗑️ Method updateNotif() dan verify() tidak dipakai lagi
+    // karena bagian Notifikasi & Verifikasi sudah dihapus dari view.
 }

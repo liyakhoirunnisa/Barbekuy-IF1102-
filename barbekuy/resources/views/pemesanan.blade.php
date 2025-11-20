@@ -8,6 +8,102 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bb-header-height: 56px;
+            --bb-max-width: 1140px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        /* ===== HEADER STICKY (selaras dengan navbar .container) ===== */
+        .bb-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: #7B0D1E;
+            color: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+        }
+
+        .bb-header-inner {
+            max-width: var(--bb-max-width);
+            margin: 0 auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            height: var(--bb-header-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        @media (min-width: 640px) {
+            .bb-header-inner {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .bb-header-inner {
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+        }
+
+        .bb-header-back {
+            position: absolute;
+            left: 1rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            border: 0;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bb-header-back span {
+            font-size: 1.25rem;
+            color: #fff;
+        }
+
+        .bb-header-title {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        /* ===== MAIN WRAPPER (lebar mengikuti navbar container) ===== */
+        .bb-main {
+            max-width: var(--bb-max-width);
+            margin: 0 auto;
+            padding-top: 1rem;
+            padding-bottom: 1.5rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .bb-main {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .bb-main {
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
@@ -19,7 +115,6 @@
     $jumlah = $jumlah ?? ($first['jumlah'] ?? 1);
     $durasi = $durasi ?? ($first['durasi'] ?? 1);
 
-    // Bangun $produk saat single (biar block lama tetap jalan)
     if (!isset($produk) && $first) {
     $produk = (object) [
     'id_produk' => $first['id_produk'] ?? null,
@@ -53,20 +148,12 @@
     @endphp
 
     <!-- Header Sticky -->
-    <!-- Header Sticky (SAMAKAN TINGGI & LEBAR DENGAN NAVBAR BERANDA) -->
-    <header class="sticky top-0 z-50 bg-[#7B0D1E] text-white shadow-sm">
-        <!-- Lebar mengikuti .container Bootstrap (~1140px di desktop) + padding responsif -->
-        <div class="relative mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-center" style="max-width:1140px;">
-            <!-- Tombol Kembali (ukuran proporsional seperti ikon navbar) -->
-            <button
-                onclick="window.history.back()"
-                class="absolute left-4 flex items-center justify-center rounded-full"
-                style="width:36px;height:36px;background:rgba(255,255,255,0.15);">
-                <span class="iconify" data-icon="mdi:chevron-left" style="font-size:1.25rem;color:#fff;"></span>
+    <header class="bb-header">
+        <div class="bb-header-inner">
+            <button onclick="window.history.back()" class="bb-header-back" aria-label="Kembali">
+                <span class="iconify" data-icon="mdi:chevron-left"></span>
             </button>
-
-            <!-- Judul (tetap di tengah) -->
-            <h1 class="m-0 font-semibold" style="font-size:1.5rem;">Pemesanan</h1>
+            <h1 class="bb-header-title">Pemesanan</h1>
         </div>
     </header>
 
@@ -85,8 +172,9 @@
         {{ session('error') }}
     </div>
     @endif
+
     <!-- Konten -->
-    <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-4" style="max-width:1140px;">
+    <main class="bb-main">
         <form id="formPemesanan" action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
             @csrf
             <!-- Produk -->
@@ -97,11 +185,11 @@
                 </div>
 
                 @if(!$isMulti)
-                {{-- === SINGLE ITEM (pakai $produk) === --}}
-                <div class="flex items-center gap-4 border rounded-xl p-3">
+                {{-- SINGLE ITEM --}}
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 border rounded-xl p-3">
                     <img src="{{ asset($gambarProdukPath) }}"
                         alt="{{ $produk->nama_produk ?? 'Produk' }}"
-                        class="w-24 h-24 object-cover rounded-lg">
+                        class="w-full sm:w-24 sm:h-24 h-40 object-cover rounded-lg">
 
                     <div class="flex-1">
                         <h3 class="font-semibold text-lg text-gray-800">{{ $produk->nama_produk }}</h3>
@@ -110,8 +198,8 @@
                             <p>
                                 Tanggal sewa:
                                 {{ $tanggalMulaiSewa && $tanggalPengembalian
-      ? \Carbon\Carbon::parse($tanggalMulaiSewa)->translatedFormat('d F Y').' - '.\Carbon\Carbon::parse($tanggalPengembalian)->translatedFormat('d F Y')
-      : '-' }}
+                                        ? \Carbon\Carbon::parse($tanggalMulaiSewa)->translatedFormat('d F Y').' - '.\Carbon\Carbon::parse($tanggalPengembalian)->translatedFormat('d F Y')
+                                        : '-' }}
                             </p>
                         </div>
 
@@ -121,7 +209,7 @@
                         </div>
                     </div>
 
-                    <div class="text-right">
+                    <div class="text-left sm:text-right mt-2 sm:mt-0 w-full sm:w-auto">
                         <p class="text-[#7B0D1E] font-bold">
                             Rp{{ number_format($produk->harga, 0, ',', '.') }}
                         </p>
@@ -136,14 +224,14 @@
                     </span>
                 </div>
 
-                {{-- Hidden utk single → store() --}}
+                {{-- Hidden utk single --}}
                 <input type="hidden" name="id_produk" value="{{ $produk->id_produk }}">
                 <input type="hidden" name="jumlah_sewa" value="{{ $produk->jumlah ?? 1 }}">
                 <input type="hidden" name="tanggal_mulai_sewa" value="{{ $tanggalMulaiSewa }}">
                 <input type="hidden" name="tanggal_pengembalian" value="{{ $tanggalPengembalian }}">
 
                 @else
-                {{-- === MULTI ITEM (loop $items) → confirm() === --}}
+                {{-- MULTI ITEM --}}
                 <div class="space-y-3">
                     @foreach($items as $idx => $it)
                     @php
@@ -151,7 +239,7 @@
                     ? 'storage/' . ltrim($it['gambar'], '/')
                     : 'storage/produk/placeholder.png';
                     @endphp
-                    <div class="flex items-center gap-4 border rounded-xl p-3">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 border rounded-xl p-3">
                         <img src="{{ asset($img) }}" alt="{{ $it['nama'] ?? 'Produk' }}" class="w-20 h-20 object-cover rounded-lg">
 
                         <div class="flex-1">
@@ -172,14 +260,14 @@
                             </div>
                         </div>
 
-                        <div class="text-right">
+                        <div class="text-left sm:text-right mt-2 sm:mt-0 w-full sm:w-auto">
                             <p class="text-[#7B0D1E] font-bold">Rp{{ number_format($it['harga'], 0, ',', '.') }}</p>
                             <p class="text-sm text-gray-500">x{{ $it['jumlah'] }}</p>
                             <p class="text-sm font-semibold mt-1">Rp{{ number_format($it['subtotal'], 0, ',', '.') }}</p>
                         </div>
                     </div>
 
-                    {{-- Hidden inputs per item (sesuai validasi confirm()) --}}
+                    {{-- Hidden per item --}}
                     <input type="hidden" name="items[{{ $idx }}][id_produk]" value="{{ $it['id_produk'] }}">
                     <input type="hidden" name="items[{{ $idx }}][jumlah]" value="{{ $it['jumlah'] }}">
                     <input type="hidden" name="items[{{ $idx }}][mulai]" value="{{ $it['mulai'] }}">
@@ -194,7 +282,7 @@
                 </div>
                 @endif
 
-                {{-- Pesan (tetap sama) --}}
+                {{-- Pesan --}}
                 <div class="mt-3">
                     <button type="button" id="togglePesan"
                         class="text-gray-500 text-sm flex items-center gap-1 hover:text-[#7B0D1E] transition">
@@ -203,7 +291,7 @@
                     </button>
                     <textarea id="pesanTextarea" name="catatan_tambahan"
                         class="hidden w-full border border-gray-300 rounded-lg mt-2 p-2 text-sm text-gray-700
-         focus:bg-white focus:ring-[#7B0D1E] focus:border-[#7B0D1E]"
+                               focus:bg-white focus:ring-[#7B0D1E] focus:border-[#7B0D1E]"
                         placeholder="Tambahkan catatan (opsional)"></textarea>
                 </div>
             </div>
@@ -229,7 +317,6 @@
                     Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125
                 </p>
 
-                <!-- Hidden input agar ikut tersimpan ke database -->
                 <input type="hidden" name="lokasi_pengambilan"
                     value="Sumampir Kulon, Sumampir, Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125">
             </div>
@@ -241,7 +328,6 @@
                     <h2 class="font-semibold text-gray-700">Upload KTP</h2>
                 </div>
 
-                <!-- Dropzone (tampil awal) -->
                 <div id="dropZone"
                     class="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center py-10 hover:border-[#7B0D1E] transition bg-gray-50 cursor-pointer">
                     <div class="w-16 h-16 rounded-full border border-gray-300 flex items-center justify-center mb-3 bg-white">
@@ -249,7 +335,7 @@
                     </div>
                     <p class="text-gray-500 text-sm mb-1">Upload KTP Anda</p>
                     <p class="text-gray-400 text-xs mb-3 text-center">
-                        Drag & drop KTP ke sini atau klik untuk memilih<br>Mendukung PNG & JPG
+                        Drag &amp; drop KTP ke sini atau klik untuk memilih<br>Mendukung PNG &amp; JPG
                     </p>
 
                     <label class="bg-[#7B0D1E] text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-[#5d0a17] transition">
@@ -258,7 +344,6 @@
                     </label>
                 </div>
 
-                <!-- Preview -->
                 <div id="previewContainer" class="hidden mt-4">
                     <div class="flex flex-col sm:flex-row items-start gap-4">
                         <img id="previewImage" src="" alt="Preview KTP" class="w-full sm:max-w-sm rounded-lg shadow">
@@ -292,9 +377,7 @@
                         <input type="radio" name="metode_pembayaran" value="cod" class="h-5 w-5 text-[#7B0D1E]">
                     </label>
 
-                    <!-- Bayar Online (Midtrans) -->
-                    <label
-                        class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
+                    <label class="flex items-center justify-between border p-3 rounded-xl cursor-pointer hover:border-[#7B0D1E] transition">
                         <span class="font-medium text-gray-700 flex items-center gap-2">
                             <span class="iconify text-[#7B0D1E] text-lg" data-icon="mdi:credit-card-scan-outline"></span>
                             Bayar Online (Midtrans)
@@ -327,12 +410,9 @@
             </div>
 
             <!-- Tombol Buat Pesanan -->
-            <div class="flex justify-between items-center mt-4 pb-10">
-                <span class="font-semibold text-gray-700">
-                    Total <span class="text-[#7B0D1E]">Rp{{ number_format($total_pembayaran, 0, ',', '.') }}</span>
-                </span>
-
-                <button type="submit" class="bg-[#7B0D1E] text-white font-medium px-6 py-2 rounded-lg hover:bg-[#5d0a17] transition">
+            <div class="flex justify-end items-center mt-4 pb-10">
+                <button type="submit"
+                    class="bg-[#7B0D1E] text-white font-medium px-6 py-2 rounded-lg hover:bg-[#5d0a17] transition">
                     Buat Pesanan
                 </button>
             </div>
@@ -399,25 +479,18 @@
         });
 
         btnGanti?.addEventListener('click', () => {
-            sedangGantiKTP = true; // tandai sedang ganti
+            sedangGantiKTP = true;
             previewContainer.classList.add('hidden');
             dropZone.classList.remove('hidden');
-
             fileInput.value = null;
-
-            setTimeout(() => {
-                fileInput.click();
-            }, 50);
+            setTimeout(() => fileInput.click(), 50);
         });
 
         dropZone?.addEventListener('click', (e) => {
-            // Cegah event ganda jika yang diklik adalah label atau input
             if (e.target.tagName.toLowerCase() === 'label' || e.target.tagName.toLowerCase() === 'input') return;
-
             if (!sedangGantiKTP) fileInput.click();
             sedangGantiKTP = false;
         });
-
 
         btnHapus?.addEventListener('click', () => {
             fileInput.value = '';
@@ -433,7 +506,6 @@
             }
         });
 
-        // Auto-preview jika file masih ada saat reload/back navigation
         if (fileInput.files && fileInput.files[0]) {
             handleSelectedFile(fileInput.files[0]);
         }

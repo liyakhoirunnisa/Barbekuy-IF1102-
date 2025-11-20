@@ -2,9 +2,24 @@
 $__cart = session('keranjang', []);
 $cartCount = 0;
 if (is_array($__cart)) {
-foreach ($__cart as $row) { $cartCount += (int)($row['jumlah'] ?? 1); }
+foreach ($__cart as $row) {
+$cartCount += (int)($row['jumlah'] ?? 1);
 }
+}
+
 $user = auth()->user();
+
+// Tentukan nama yang ditampilkan di navbar
+$displayName = null;
+if ($user) {
+// Utamakan first_name + last_name jika ada
+$displayName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+
+// Jika keduanya kosong, fallback ke kolom "name"
+if ($displayName === '') {
+$displayName = $user->name ?? null;
+}
+}
 @endphp
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -148,7 +163,7 @@ $user = auth()->user();
 
     {{-- 🔍 SEARCH BAR (desktop) --}}
     <form class="d-none d-lg-block" action="{{ url('/search') }}" method="GET">
-      <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border" style="width: 400px;">
+      <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border">
         <i class="bi bi-search me-2 text-dark"></i>
         <input type="text" name="q" placeholder="Cari..." class="border-0 outline-none w-100" style="font-size: 0.95rem; color: #000;">
       </div>
@@ -193,12 +208,12 @@ $user = auth()->user();
           </a>
         </li>
 
-
         {{-- 🔐 Profil / Login --}}
         @auth
         <li class="nav-item dropdown ms-2">
           <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu"
-            role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profil">
+            role="button" data-bs-toggle="dropdown" aria-expanded="false"
+            title="{{ $displayName ?? 'Profil' }}">
             <span class="icon-lg" aria-hidden="true" style="color:#751A25;">
               {{-- person-circle --}}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
@@ -208,35 +223,34 @@ $user = auth()->user();
             </span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileMenu">
+            {{-- Header profil: ikon + nama + email --}}
+            <li class="px-3 pt-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center">
+                <div class="me-3 rounded-circle bg-light d-flex align-items-center justify-content-center"
+                  style="width:36px;height:36px;">
+                  {{-- Inisial / ikon kecil --}}
+                  <i class="bi bi-person-fill" style="font-size:1.2rem;color:#751A25;"></i>
+                </div>
+                <div>
+                  @if(!empty($displayName))
+                  <div class="fw-semibold" style="color:#751A25;">{{ $displayName }}</div>
+                  @endif
+                  @if($user && !empty($user->email))
+                  <div class="small text-muted">{{ $user->email }}</div>
+                  @endif
+                </div>
+              </div>
+            </li>
+
             {{-- Pengaturan Akun --}}
             <li>
               <a class="dropdown-item" href="{{ url('/pengaturan') }}">
                 <span class="icon me-2" aria-hidden="true">
-                  {{-- gear --}}
                   <i class="bi bi-gear fs-5" style="color:#751A25;"></i>
                 </span>
                 Pengaturan Akun
               </a>
             </li>
-
-            @if($user && $user->role === 'admin')
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li>
-              <a class="dropdown-item"
-                href="@if(Route::has('admin.beranda')) {{ route('admin.beranda') }} @else {{ url('/admin/beranda') }} @endif">
-                <span class="icon me-2" aria-hidden="true">
-                  {{-- speedometer2 --}}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 4a.5.5 0 0 1 .5.5v4.21l2.146 2.146a.5.5 0 1 1-.707.707L7.5 9.707V4.5A.5.5 0 0 1 8 4z" />
-                    <path d="M3.278 14A7 7 0 1 1 12.722 14z" />
-                  </svg>
-                </span>
-                Admin Dashboard
-              </a>
-            </li>
-            @endif
 
             <li>
               <hr class="dropdown-divider">
@@ -246,7 +260,6 @@ $user = auth()->user();
                 @csrf
                 <button type="submit" class="dropdown-item">
                   <span class="icon me-2" aria-hidden="true">
-                    {{-- box-arrow-right --}}
                     <i class="bi bi-box-arrow-right fs-5" style="color:#751A25;"></i>
                   </span>
                   Keluar
@@ -254,6 +267,7 @@ $user = auth()->user();
               </form>
             </li>
           </ul>
+
         </li>
         @else
         <li class="nav-item ms-lg-2">

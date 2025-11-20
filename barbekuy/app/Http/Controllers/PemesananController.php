@@ -15,12 +15,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\NotifikasiPemesanan;
 
-
-
 class PemesananController extends Controller
 {
     // ======================
-    // TAMPILKAN HALAMAN PEMESANAN
+    // TAMPILKAN HALAMAN PEMESANAN (SINGLE ITEM)
     // ======================
     public function show($id, Request $request)
     {
@@ -28,15 +26,15 @@ class PemesananController extends Controller
         $tanggalPengembalian = $request->query('tanggal_pengembalian') ?? $request->query('tanggal_selesai');
         $jumlah              = max(1, (int) $request->query('jumlah', 1));
 
-        // Ambil produk via kolom id_produk (aman meski primaryKey model belum diset)
+        // Ambil produk via kolom id_produk
         $produk = Produk::where('id_produk', $id)->first();
         if (!$produk) abort(404, 'Produk tidak ditemukan');
 
         // durasi min 1 hari
         $durasi = 1;
         if ($tanggalMulaiSewa && $tanggalPengembalian) {
-            $mulai = \Carbon\Carbon::parse($tanggalMulaiSewa);
-            $seles = \Carbon\Carbon::parse($tanggalPengembalian);
+            $mulai = Carbon::parse($tanggalMulaiSewa);
+            $seles = Carbon::parse($tanggalPengembalian);
             $durasi = max(1, $mulai->diffInDays($seles));
         }
 
@@ -57,26 +55,26 @@ class PemesananController extends Controller
 
         $total = $subtotal;
 
-        // ⬇️ KUNCI PERBAIKAN: kirim juga $produk ke view
         return view('pemesanan', [
             'produk'               => $produk,
             'items'                => $items,
             'total'                => $total,
-            'tanggalMulaiSewa'     => $tanggalMulaiSewa,      // ⬅️ tambah
-            'tanggalPengembalian'  => $tanggalPengembalian,   // ⬅️ tambah
-            'jumlah'               => $jumlah,                // opsional kalau dipakai di Blade
-            'durasi'               => $durasi,                // opsional
+            'tanggalMulaiSewa'     => $tanggalMulaiSewa,
+            'tanggalPengembalian'  => $tanggalPengembalian,
+            'jumlah'               => $jumlah,
+            'durasi'               => $durasi,
         ]);
     }
 
     // ======================
-    // SIMPAN PESANAN BARU
+    // SIMPAN PESANAN BARU (SINGLE ITEM)
     // ======================
     public function store(Request $request)
     {
         if (!auth()->check()) {
             return back()->with('error', 'Silakan login terlebih dahulu.');
         }
+
         $validated = $request->validate([
             'id_produk'            => 'required|exists:produk,id_produk',
             'tanggal_mulai_sewa'   => 'required|date',
@@ -84,10 +82,8 @@ class PemesananController extends Controller
             'nama_penerima'        => 'required|string|max:100',
             'jumlah_sewa'          => 'required|integer|min:1',
             'catatan_tambahan'     => 'nullable|string|max:255',
-            'metode_pembayaran' => 'required|string|in:cod,midtrans',
+            'metode_pembayaran'    => 'required|string|in:cod,midtrans',
             'lokasi_pengambilan'   => 'nullable|string|max:255',
-
-            // ⬇️ W A J I B
             'ktp'                  => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
@@ -99,7 +95,11 @@ class PemesananController extends Controller
         $hargaSatuan = (int) $produk->harga;
         $subtotal    = $hargaSatuan * (int) $validated['jumlah_sewa'] * $durasi;
 
-        // ⬇️ Simpan file KTP ke storage/app/public/ktp
+        // biaya layanan SELALU 1.000
+        $biayaLayanan = 1000;
+        $totalBayar   = $subtotal + $biayaLayanan;
+
+        // Simpan file KTP ke storage/app/public/ktp
         $ktpPath = $request->file('ktp')->store('ktp', 'public');
 
         DB::beginTransaction();
@@ -109,15 +109,11 @@ class PemesananController extends Controller
                 'nama_penerima'        => $validated['nama_penerima'],
                 'tanggal_sewa'         => $mulai->toDateString(),
                 'tanggal_pengembalian' => $akhir->toDateString(),
+                // DB hanya simpan subtotal (tanpa biaya layanan)
                 'total_harga'          => $subtotal,
                 'catatan_tambahan'     => $validated['catatan_tambahan'] ?? null,
                 'status_pesanan'       => 'Belum Bayar',
-
-                // ⬇️ Simpan path KTP (pastikan kolom ada)
                 'ktp_path'             => $ktpPath,
-
-                // 'metode_pembayaran'  => $validated['metode_pembayaran'] ?? null,
-                // 'lokasi_pengambilan' => $validated['lokasi_pengambilan'] ?? null,
             ]);
 
             DetailPemesanan::create([
@@ -130,57 +126,71 @@ class PemesananController extends Controller
 
             DB::commit();
 
-            // === KIRIM NOTIFIKASI SETELAH PESANAN BERHASIL TERSIMPAN ===
+            // notif admin
             $this->notifyAdmins($p);
 
-            // === CEK METODE PEMBAYARAN ===
+            // === CABANG METODE PEMBAYARAN ===
             if ($validated['metode_pembayaran'] === 'cod') {
-                $p->update(['status_pesanan' => 'Sedang Proses']);
-                return redirect()->route('riwayat.semua')
-                    ->with('success', "Pesanan COD {$p->no_pesanan} berhasil dibuat dan sedang diproses.");
-            } else {
-                // === MIDTRANS REDIRECT FLOW ===
-                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
-                \Midtrans\Config::$isProduction = config('midtrans.is_production');
-                \Midtrans\Config::$isSanitized  = config('midtrans.is_sanitized');
-                \Midtrans\Config::$is3ds        = config('midtrans.is_3ds');
+                // COD → status langsung "Sedang Proses", user bayar subtotal + biaya layanan
+                $p->update([
+                    'status_pesanan'      => 'Sedang Proses',
+                    'metode_pembayaran'   => $validated['metode_pembayaran'],
+                    'lokasi_pengambilan'  => $validated['lokasi_pengambilan'] ?? null,
+                ]);
 
-                $biayaLayanan = 1000;
-                $totalBayar   = $p->total_harga + $biayaLayanan;
+                return redirect()
+                    ->route('riwayat.semua')
+                    ->with(
+                        'success',
+                        "Pesanan COD {$p->no_pesanan} berhasil dibuat. Total yang perlu dibayar: Rp" .
+                            number_format($totalBayar, 0, ',', '.')
+                    );
+            } else {
+                // MIDTRANS: redirect ke Snap dengan total = subtotal + biaya layanan
+                Config::$serverKey    = config('midtrans.server_key');
+                Config::$isProduction = config('midtrans.is_production');
+                Config::$isSanitized  = config('midtrans.is_sanitized');
+                Config::$is3ds        = config('midtrans.is_3ds');
 
                 $params = [
                     'transaction_details' => [
-                        'order_id'     => $p->id_pesanan,   // pastikan unik
+                        'order_id'     => $p->id_pesanan,
                         'gross_amount' => $totalBayar,
                     ],
                     'item_details' => [
-                        ['id' => 'produk',  'price' => $p->total_harga, 'quantity' => 1, 'name' => 'Total Sewa'],
-                        ['id' => 'layanan', 'price' => $biayaLayanan,   'quantity' => 1, 'name' => 'Biaya Layanan'],
+                        [
+                            'id'       => 'produk',
+                            'price'    => $subtotal,
+                            'quantity' => 1,
+                            'name'     => 'Total Sewa',
+                        ],
+                        [
+                            'id'       => 'layanan',
+                            'price'    => $biayaLayanan,
+                            'quantity' => 1,
+                            'name'     => 'Biaya Layanan',
+                        ],
                     ],
                     'customer_details' => [
                         'first_name' => $p->nama_penerima,
                         'email'      => auth()->user()->email ?? 'noemail@example.com',
                     ],
-                    // agar selesai bayar balik ke websitemu
                     'callbacks' => [
                         'finish' => route('midtrans.finish'),
                     ],
                 ];
 
-                // buat transaksi → dapat redirect_url
-                $snap = \Midtrans\Snap::createTransaction($params);
+                $snap = Snap::createTransaction($params);
 
-                // simpan info (opsional)
+                // JANGAN ubah total_harga → tetap subtotal
                 $p->update([
-                    'total_harga' => $totalBayar,
-                    'snap_token'  => $snap->token ?? null,
-                    'metode_pembayaran'  => $validated['metode_pembayaran'],        // kalau kolom ada
-                    'lokasi_pengambilan' => $validated['lokasi_pengambilan'] ?? null
+                    'snap_token'        => $snap->token ?? null,
+                    'metode_pembayaran' => $validated['metode_pembayaran'],
+                    'lokasi_pengambilan' => $validated['lokasi_pengambilan'] ?? null,
+                    // status tetap "Belum Bayar" sampai notifikasi Midtrans masuk
                 ]);
 
-                // langsung pindah ke halaman Midtrans (tab yang sama)
                 return redirect()->away($snap->redirect_url);
-
             }
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -189,26 +199,30 @@ class PemesananController extends Controller
         }
     }
 
+    // ======================
+    // PREPARE DARI KERANJANG
+    // ======================
     public function prepare(Request $request)
     {
-        // menerima data checkout dari keranjang
         $data = $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.id_produk' => 'required|string',
-            'items.*.jumlah_sewa' => 'required|integer|min:1',
+            'items'                      => 'required|array|min:1',
+            'items.*.id_produk'          => 'required|string',
+            'items.*.jumlah_sewa'        => 'required|integer|min:1',
             'items.*.tanggal_mulai_sewa' => 'required|date',
             'items.*.tanggal_pengembalian' => 'required|date|after_or_equal:items.*.tanggal_mulai_sewa',
         ]);
 
-        // simpan ke session supaya bisa dibaca di pemesanan.blade.php
         $request->session()->put('checkout_items', $data['items']);
 
         return response()->json([
-            'ok' => true,
+            'ok'       => true,
             'redirect' => route('pemesanan.create'),
         ]);
     }
 
+    // ======================
+    // TAMPILKAN PEMESANAN (MULTI ITEM)
+    // ======================
     public function create(Request $request)
     {
         $items = $request->session()->get('checkout_items', []);
@@ -219,55 +233,59 @@ class PemesananController extends Controller
         $produkMap = Produk::whereIn('id_produk', collect($items)->pluck('id_produk'))->get()->keyBy('id_produk');
 
         $ringkasan = [];
-        $total = 0;
+        $total     = 0;
 
         foreach ($items as $it) {
             $p = $produkMap[$it['id_produk']] ?? null;
             if (!$p) continue;
 
-            $mulai = Carbon::parse($it['tanggal_mulai_sewa']);
-            $akhir = Carbon::parse($it['tanggal_pengembalian']);
+            $mulai  = Carbon::parse($it['tanggal_mulai_sewa']);
+            $akhir  = Carbon::parse($it['tanggal_pengembalian']);
             $durasi = max(1, $mulai->diffInDays($akhir));
 
-            $harga = (int) $p->harga;
+            $harga    = (int) $p->harga;
             $subtotal = $harga * $it['jumlah_sewa'] * $durasi;
 
             $total += $subtotal;
 
             $ringkasan[] = [
                 'id_produk' => $p->id_produk,
-                'nama' => $p->nama_produk,
-                'gambar' => $p->gambar,
-                'jumlah' => $it['jumlah_sewa'],
-                'harga' => $harga,
-                'mulai' => $mulai->toDateString(),
-                'akhir' => $akhir->toDateString(),
-                'durasi' => $durasi,
-                'subtotal' => $subtotal,
+                'nama'      => $p->nama_produk,
+                'gambar'    => $p->gambar,
+                'jumlah'    => $it['jumlah_sewa'],
+                'harga'     => $harga,
+                'mulai'     => $mulai->toDateString(),
+                'akhir'     => $akhir->toDateString(),
+                'durasi'    => $durasi,
+                'subtotal'  => $subtotal,
             ];
         }
 
-        $first = $ringkasan[0] ?? null;
-        $tanggalMulaiSewa    = $first['mulai'] ?? null;
-        $tanggalPengembalian = $first['akhir'] ?? null;
+        $first               = $ringkasan[0] ?? null;
+        $tanggalMulaiSewa    = $first['mulai']  ?? null;
+        $tanggalPengembalian = $first['akhir']  ?? null;
         $jumlah              = $first['jumlah'] ?? null;
         $durasi              = $first['durasi'] ?? null;
-        
+
         return view('pemesanan', [
             'items'               => $ringkasan,
             'total'               => $total,
-            'tanggalMulaiSewa'    => $tanggalMulaiSewa,     // ⬅️ tambah
-            'tanggalPengembalian' => $tanggalPengembalian,  // ⬅️ tambah
-            'jumlah'              => $jumlah,               // opsional
-            'durasi'              => $durasi,               // opsional
+            'tanggalMulaiSewa'    => $tanggalMulaiSewa,
+            'tanggalPengembalian' => $tanggalPengembalian,
+            'jumlah'              => $jumlah,
+            'durasi'              => $durasi,
         ]);
     }
 
+    // ======================
+    // SIMPAN PEMESANAN MULTI ITEM
+    // ======================
     public function confirm(Request $request)
     {
         if (!auth()->check()) {
             return back()->with('error', 'Silakan login terlebih dahulu.');
         }
+
         $validated = $request->validate([
             'items'                 => 'required|array|min:1',
             'items.*.id_produk'     => 'required|exists:produk,id_produk',
@@ -276,12 +294,12 @@ class PemesananController extends Controller
             'items.*.akhir'         => 'required|date|after_or_equal:items.*.mulai',
             'nama_penerima'         => 'required|string|max:100',
             'catatan_tambahan'      => 'nullable|string|max:255',
-            'metode_pembayaran' => 'required|string|in:cod,midtrans',
+            'metode_pembayaran'     => 'required|string|in:cod,midtrans',
             'lokasi_pengambilan'    => 'nullable|string|max:255',
             'ktp'                   => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // ⬇️ Simpan file KTP
+        // Simpan file KTP
         $ktpPath = $request->file('ktp')->store('ktp', 'public');
 
         $subtotalAll = 0;
@@ -297,10 +315,8 @@ class PemesananController extends Controller
                 'tanggal_sewa'         => $mulai->toDateString(),
                 'tanggal_pengembalian' => $akhir->toDateString(),
                 'total_harga'          => 0,
-                'catatan_tambahan' => $validated['catatan_tambahan'] ?? null, // <-- pakai field yg benar
+                'catatan_tambahan'     => $validated['catatan_tambahan'] ?? null,
                 'status_pesanan'       => 'Belum Bayar',
-
-                // ⬇️ simpan path KTP
                 'ktp_path'             => $ktpPath,
             ]);
 
@@ -324,16 +340,81 @@ class PemesananController extends Controller
                 $subtotalAll += $subtotal;
             }
 
+            // DB simpan subtotal saja
             $p->update(['total_harga' => $subtotalAll]);
+
+            $biayaLayanan = 1000;
+            $totalBayar   = $subtotalAll + $biayaLayanan;
 
             $request->session()->forget('checkout_items');
 
             DB::commit();
-            // === KIRIM NOTIFIKASI SETELAH PESANAN MULTI ITEM TERSIMPAN ===
+
+            // notif admin
             $this->notifyAdmins($p);
 
-            return redirect()->route('riwayat.semua')
-                ->with('success', "Pesanan {$p->no_pesanan} berhasil dibuat.");
+            // === CABANG METODE PEMBAYARAN ===
+            if ($validated['metode_pembayaran'] === 'cod') {
+                $p->update([
+                    'status_pesanan'      => 'Sedang Proses',
+                    'metode_pembayaran'   => $validated['metode_pembayaran'],
+                    'lokasi_pengambilan'  => $validated['lokasi_pengambilan'] ?? null,
+                ]);
+
+                return redirect()
+                    ->route('riwayat.semua')
+                    ->with(
+                        'success',
+                        "Pesanan COD {$p->no_pesanan} berhasil dibuat. Total yang perlu dibayar: Rp" .
+                            number_format($totalBayar, 0, ',', '.')
+                    );
+            } else {
+                // MIDTRANS
+                Config::$serverKey    = config('midtrans.server_key');
+                Config::$isProduction = config('midtrans.is_production');
+                Config::$isSanitized  = config('midtrans.is_sanitized');
+                Config::$is3ds        = config('midtrans.is_3ds');
+
+                $params = [
+                    'transaction_details' => [
+                        'order_id'     => $p->id_pesanan,
+                        'gross_amount' => $totalBayar,
+                    ],
+                    'item_details' => [
+                        [
+                            'id'       => 'produk',
+                            'price'    => $subtotalAll,
+                            'quantity' => 1,
+                            'name'     => 'Total Sewa',
+                        ],
+                        [
+                            'id'       => 'layanan',
+                            'price'    => $biayaLayanan,
+                            'quantity' => 1,
+                            'name'     => 'Biaya Layanan',
+                        ],
+                    ],
+                    'customer_details' => [
+                        'first_name' => $p->nama_penerima,
+                        'email'      => auth()->user()->email ?? 'noemail@example.com',
+                    ],
+                    'callbacks' => [
+                        'finish' => route('midtrans.finish'),
+                    ],
+                ];
+
+                $snap = Snap::createTransaction($params);
+
+                // simpan info pembayaran (TANPA mengubah total_harga jadi totalBayar)
+                $p->update([
+                    'snap_token'         => $snap->token ?? null,
+                    'metode_pembayaran'  => $validated['metode_pembayaran'],
+                    'lokasi_pengambilan' => $validated['lokasi_pengambilan'] ?? null,
+                    'status_pesanan'     => 'Belum Bayar', // menunggu pembayaran Midtrans
+                ]);
+
+                return redirect()->away($snap->redirect_url);
+            }
         } catch (\Throwable $e) {
             DB::rollBack();
             report($e);
@@ -341,6 +422,9 @@ class PemesananController extends Controller
         }
     }
 
+    // ======================
+    // SIMPAN DRAFT / INVOICE
+    // ======================
     public function storeInvoice(Request $request)
     {
         $validated = $request->validate([
@@ -354,7 +438,6 @@ class PemesananController extends Controller
             'ktp'                 => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Simpan KTP
         $ktpPath = $request->file('ktp')->store('ktp', 'public');
 
         $subtotalAll = 0;
@@ -376,7 +459,6 @@ class PemesananController extends Controller
 
         DB::beginTransaction();
         try {
-            // Ambil tanggal dari item pertama untuk header pesanan
             $firstMulai = $detailRows[0]['mulai']->toDateString();
             $firstAkhir = $detailRows[0]['akhir']->toDateString();
 
@@ -385,9 +467,9 @@ class PemesananController extends Controller
                 'nama_penerima'        => $validated['nama_penerima'],
                 'tanggal_sewa'         => $firstMulai,
                 'tanggal_pengembalian' => $firstAkhir,
-                'total_harga'          => $subtotalAll, // set langsung total
+                'total_harga'          => $subtotalAll,
                 'catatan_tambahan'     => $validated['catatan_tambahan'] ?? null,
-                'status_pesanan'       => 'Belum Bayar', // atau 'Draft' jika kamu mau
+                'status_pesanan'       => 'Belum Bayar', // atau 'Draft'
                 'ktp_path'             => $ktpPath,
             ]);
 
@@ -403,10 +485,10 @@ class PemesananController extends Controller
 
             DB::commit();
             return response()->json([
-                'success'     => true,
-                'message'     => 'Draft pesanan dibuat.',
-                'no_pesanan'  => $p->no_pesanan,
-                'total'       => $p->total_harga,
+                'success'    => true,
+                'message'    => 'Draft pesanan dibuat.',
+                'no_pesanan' => $p->no_pesanan,
+                'total'      => $p->total_harga,
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -415,20 +497,20 @@ class PemesananController extends Controller
         }
     }
 
-
+    // ======================
+    // RIWAYAT
+    // ======================
     public function riwayat()
     {
         $pemesanan = Pemesanan::where('id_user', auth()->id())
             ->orderByDesc('created_at')
-            ->with(['details.product', 'details.ulasan']) // ⬅️ tambahkan ulasan
+            ->with(['details.product', 'details.ulasan'])
             ->get();
 
-        // 🔹 ambil semua ulasan milik user ini
         $ulasan = DB::table('ulasan')
             ->where('id_user', auth()->id())
             ->get(['id_detail', 'id']);
 
-        // 🔹 buat map: id_detail -> id_ulasan
         $reviewMap = $ulasan->pluck('id', 'id_detail')->toArray();
 
         return view('riwayat', compact('pemesanan'));
@@ -437,7 +519,6 @@ class PemesananController extends Controller
     /**
      * Kirim notifikasi ke semua admin bahwa ada pemesanan baru.
      */
-    // app/Http/Controllers/PemesananController.php
     private function notifyAdmins($order, ?string $explicitName = null): void
     {
         try {
@@ -445,16 +526,15 @@ class PemesananController extends Controller
             $nama = $explicitName
                 ?? ($customer?->name ?? $customer?->nama ?? $order->nama_penerima ?? 'Pelanggan');
 
-            // PENTING: pakai nomor transaksi
             $nomor = $order->no_pesanan ?? (string)($order->id_pesanan ?? $order->id);
             $pesan = "{$nama} melakukan pemesanan #{$nomor}";
 
-            $admins = \App\Models\User::where('role', 'admin')->get();
+            $admins = User::where('role', 'admin')->get();
             if ($admins->isEmpty()) return;
 
-            \Illuminate\Support\Facades\Notification::send(
+            Notification::send(
                 $admins,
-                new \App\Notifications\NotifikasiPemesanan($nama, $pesan, $nomor) // kirim NO
+                new NotifikasiPemesanan($nama, $pesan, $nomor)
             );
         } catch (\Throwable $e) {
             report($e);

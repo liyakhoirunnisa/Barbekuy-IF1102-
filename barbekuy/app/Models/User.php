@@ -14,6 +14,18 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+
+        // 🌟 Profil
+        'first_name',
+        'last_name',
+        'phone',
+        'gender',
+        'address',
+        'avatar_path',
+
+        // 🌟 Verifikasi
+        'verification_code',
+        'email_verified_at',
     ];
 
     protected $hidden = [

@@ -21,25 +21,11 @@ return new class extends Migration {
             if (!Schema::hasColumn('users', 'gender')) {
                 $table->string('gender', 1)->nullable()->after('phone'); // L/P
             }
-            if (!Schema::hasColumn('users', 'national_id')) {
-                $table->string('national_id', 50)->nullable()->after('gender');
-            }
             if (!Schema::hasColumn('users', 'address')) {
-                $table->text('address')->nullable()->after('national_id');
+                $table->text('address')->nullable();
             }
             if (!Schema::hasColumn('users', 'avatar_path')) {
-                $table->string('avatar_path')->nullable()->after('address');
-            }
-
-            // === Notifikasi ===
-            if (!Schema::hasColumn('users', 'notif_email')) {
-                $table->boolean('notif_email')->default(true)->after('avatar_path');
-            }
-            if (!Schema::hasColumn('users', 'notif_message')) {
-                $table->boolean('notif_message')->default(true)->after('notif_email');
-            }
-            if (!Schema::hasColumn('users', 'notif_payment')) {
-                $table->boolean('notif_payment')->default(true)->after('notif_message');
+                $table->string('avatar_path')->nullable();
             }
 
             // === Verifikasi ===
@@ -60,12 +46,8 @@ return new class extends Migration {
                 'last_name',
                 'phone',
                 'gender',
-                'national_id',
                 'address',
                 'avatar_path',
-                'notif_email',
-                'notif_message',
-                'notif_payment',
                 'verification_code',
                 'email_verified_at',
             ];

@@ -13,16 +13,32 @@
     <style>
         * {
             font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f9f9f9;
         }
 
         /* === Hero Section === */
         .hero {
             background-color: #751A25;
-            /* 🔥 ganti dari gambar ke warna solid */
             color: white;
             text-align: center;
             padding: 140px 20px;
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero .content {
+            max-width: 720px;
         }
 
         .hero h1 {
@@ -35,14 +51,13 @@
             margin-top: 10px;
         }
 
-
         /* === Tentang Kami === */
         #tentang {
             padding: 80px 0;
         }
 
         #tentang h2 {
-            color: #000000;
+            color: #000;
             font-weight: 600;
             margin-bottom: 25px;
         }
@@ -59,7 +74,7 @@
         }
 
         #menu-favorit h2 {
-            color: #000000;
+            color: #000;
             font-weight: 600;
             margin-bottom: 40px;
         }
@@ -69,6 +84,9 @@
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             transition: 0.3s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .menu-card:hover {
@@ -77,27 +95,27 @@
 
         .menu-card img {
             border-radius: 12px 12px 0 0;
-            weight: 260px height: 260px;
-            /* 🔥 lebih tinggi dari sebelumnya */
+            width: 100%;
+            height: 260px;
             object-fit: cover;
             object-position: center top;
-            /* fokus ke bagian atas gambar */
-            transition: transform 0.3s ease;
+        }
+
+        .menu-card .card-body {
+            text-align: center;
+            padding: 16px 18px 20px;
+            flex: 1;
+        }
+
+        .menu-card .card-title {
+            font-size: 1.05rem;
+            margin-bottom: 6px;
         }
 
         .menu-card .card-text.harga {
             font-size: 1.2rem;
-            /* 🔥 lebih besar dari default */
             font-weight: 600;
-            /* biar terlihat tegas */
             color: #751A25;
-            /* merah tua sesuai tema Barbekuy */
-            margin-top: 8px;
-        }
-
-
-        .menu-card .card-body {
-            text-align: center;
         }
 
         /* === Testimoni === */
@@ -106,44 +124,23 @@
         }
 
         #testimoni h2 {
-            color: #000000;
+            color: #000;
             font-weight: 600;
             margin-bottom: 40px;
         }
 
-        .testimoni-box {
-            background: #fff;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .testimoni-box p {
-            font-style: italic;
-            color: #555;
-        }
-
-        .testimoni-box h6 {
-            color: #751A25;
-            margin-top: 15px;
-        }
-
-        /* Equal height for testimonial cards in one row */
-        .cards-equal>.col-md-4 {
-            display: flex;
-        }
-
         .testimoni-card {
+            background-color: #751A25;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            /* isi rata atas-bawah */
             height: 100%;
         }
 
         .testimoni-bottom {
             margin-top: auto;
-            /* dorong ke bawah */
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -155,6 +152,10 @@
             color: white;
             padding: 30px 0;
             text-align: center;
+        }
+
+        footer a {
+            word-break: break-word;
         }
 
         /* Tombol Lihat Lebih Banyak */
@@ -169,28 +170,164 @@
             font-weight: 600;
             border-radius: 50px;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: 0.3s;
             box-shadow: 0 4px 10px rgba(117, 26, 37, 0.15);
         }
 
         .btn-lihat-lebih:hover {
             background-color: #751A25;
-            color: #fff;
+            color: white;
             transform: translateY(-3px);
-            box-shadow: 0 6px 14px rgba(117, 26, 37, 0.3);
         }
 
-        .btn-lihat-lebih:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(117, 26, 37, 0.3);
+        /* ============================
+           PADDING RESPONSIVE (bukan desktop)
+           ============================ */
+        @media (max-width: 992px) {
+            .responsive-padding {
+                padding-left: 18px !important;
+                padding-right: 18px !important;
+            }
+
+            #tentang,
+            #menu-favorit,
+            #testimoni {
+                padding: 60px 0;
+            }
+
+            .hero h1 {
+                font-size: 2.3rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
         }
 
-        .btn-lihat-lebih .arrow {
-            transition: transform 0.3s ease;
+        /* ============================
+           RESPONSIVE MOBILE
+           ============================ */
+        @media (max-width: 768px) {
+
+            .hero {
+                padding: 90px 20px;
+            }
+
+            .hero h1 {
+                font-size: 1.9rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            #tentang .row {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            #tentang img {
+                margin-top: 15px;
+                max-height: 260px;
+            }
+
+            .menu-card img {
+                height: 200px;
+            }
+
+            .testimoni-bottom {
+                flex-direction: column;
+                gap: 6px;
+                align-items: flex-start;
+            }
+
+            footer .col-md-4 {
+                margin-bottom: 25px;
+                text-align: center;
+            }
         }
 
-        .btn-lihat-lebih:hover .arrow {
-            transform: translateX(6px);
+        .floating-wa {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            background-color: #25D366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            z-index: 999;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .floating-wa:hover {
+            background-color: #1ebe5d;
+            transform: scale(1.08);
+        }
+
+        /* ============================
+           RESPONSIVE PHONE < 480px
+           ============================ */
+        @media (max-width: 480px) {
+
+            /* gambar tentang kami lebih kecil & center */
+            .tentang-img-wrapper {
+                display: flex;
+                justify-content: center;
+            }
+
+            .tentang-img-wrapper img {
+                width: 75% !important;
+                max-width: 240px !important;
+                height: auto !important;
+                border-radius: 12px;
+            }
+
+            /* Teks makin kecil */
+            .hero {
+                padding: 70px 20px;
+            }
+
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .hero p {
+                font-size: 0.9rem;
+            }
+
+            .menu-card img {
+                height: 170px;
+            }
+
+            .testimoni-card {
+                font-size: 0.9rem;
+                padding: 18px;
+            }
+
+            /* Tombol kecil tapi tidak full width */
+            .btn-lihat-lebih {
+                padding: 10px 20px;
+                font-size: 0.88rem;
+                border-width: 1.8px;
+                border-radius: 40px;
+                width: auto;
+                display: inline-flex;
+            }
+
+            .floating-wa {
+                width: 52px;
+                height: 52px;
+                font-size: 28px;
+                bottom: 18px;
+                right: 18px;
+            }
         }
     </style>
 </head>
@@ -209,9 +346,18 @@
     </section>
 
     {{-- Tentang Kami --}}
-    <section id="tentang" class="container py-5">
+    <section id="tentang" class="container py-5 responsive-padding">
         <div class="row align-items-center">
-            {{-- Kolom kiri: teks --}}
+
+            <!-- GAMBAR DULU -->
+            <div class="col-md-6 text-center mb-4 tentang-img-wrapper">
+                <img src="{{ asset('images/loginpage.png') }}"
+                    alt="Tentang Barbekuy"
+                    class="img-fluid rounded-4 shadow-lg"
+                    style="width: 100%; max-width: 500px; max-height: 400px; object-fit: cover; object-position: 50% 30%;">
+            </div>
+
+            <!-- TEKS SESUDAHNYA -->
             <div class="col-md-6">
                 <h2 class="mb-4" style="color: #000000; font-weight: 600;">Tentang Kami</h2>
                 <p style="color: #333; font-size: 1.05rem; text-align: justify;">
@@ -224,30 +370,19 @@
                 </p>
             </div>
 
-            <!-- Kolom kanan: gambar -->
-            <div class="col-md-6 text-center">
-                <img src="{{ asset('images/loginpage.png') }}"
-                    alt="Tentang Barbekuy"
-                    class="img-fluid rounded-4 shadow-lg"
-                    style="width: 100%; max-width: 500px; max-height: 400px; object-fit: cover; object-position: 50% 30%;">
-            </div>
         </div>
     </section>
 
-
     {{-- Menu Favorit (dinamis) --}}
-    <section id="menu-favorit">
+    <section id="menu-favorit" class="responsive-padding">
         <div class="container text-center">
             <h2>Menu Paling Laris</h2>
             <div class="row justify-content-center">
                 @forelse ($bestSellers as $p)
                 @php
-                // ambil gambar produk (storage) atau fallback
                 $img = !empty($p->gambar)
-                ? asset('storage/'.ltrim($p->gambar, '/'))
+                ? asset('storage/' . ltrim($p->gambar, '/'))
                 : asset('images/bbq.jpg');
-
-                // sesuaikan nama kolom harga di tabel produk kamu
                 $harga = $p->harga ?? $p->harga_satuan ?? 0;
                 @endphp
 
@@ -268,7 +403,7 @@
     </section>
 
     {{-- Testimoni --}}
-    <section id="testimoni" class="container text-center py-5">
+    <section id="testimoni" class="container text-center py-5 responsive-padding">
         <h2 class="mb-5" style="color: #000000; font-weight: 600;">Apa Kata Mereka Tentang Kami</h2>
 
         <div class="row justify-content-center cards-equal">
@@ -315,9 +450,8 @@
         </div>
     </section>
 
-
     {{-- Footer --}}
-    <footer id="kontak" style="background-color: #751A25; color: white; padding: 50px 0 20px 0;">
+    <footer id="kontak" class="responsive-padding" style="background-color: #751A25; color: white; padding: 50px 0 20px 0;">
         <div class="container">
             <div class="row align-items-start mb-4">
                 <!-- Logo -->
@@ -341,10 +475,9 @@
                             class="text-white text-decoration-none">
                             Sumampir Kulon, Sumampir, Purwokerto Utara, Banyumas Regency, Central Java 53125
                         </a><br>
-                        <!-- Link ke WhatsApp -->
                         <a href="https://wa.me/6287746567500"
                             target="_blank"
-                            class="text-white text-decoration-none d-flex align-items-center mt-1">
+                            class="text-white text-decoration-none d-flex align-items-center justify-content-center justify-content-md-start mt-1">
                             <i class="bi bi-whatsapp me-2"></i>
                             <span>+6287746567500</span>
                         </a>
@@ -352,12 +485,9 @@
                 </div>
             </div>
 
-            <!-- Garis Putus-Putus -->
             <hr style="border-top: 2px dotted #fff; margin: 30px 0;">
 
-            <!-- Bawah Footer -->
             <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
-                <!-- Instagram -->
                 <div class="mb-2 mb-md-0">
                     <a href="https://instagram.com/barbekuy.purwokerto" target="_blank"
                         class="text-white text-decoration-none d-flex align-items-center">
@@ -366,17 +496,16 @@
                     </a>
                 </div>
 
-                <!-- Chat Kami -->
-                <div>
-                    <a href="{{ url('/chat') }}" class="text-white text-decoration-none d-flex align-items-center justify-content-center">
-                        <span class="me-2">Chat kami</span>
-                        <i class="bi bi-chat-dots"></i>
-                    </a>
-                </div>
-
             </div>
         </div>
     </footer>
+
+    <!-- Floating WhatsApp -->
+    <a href="https://wa.me/6287746567500?text=Haii%20Kak!%20Saya%20mau%20tanya.."
+        target="_blank"
+        class="floating-wa">
+        <i class="bi bi-whatsapp"></i>
+    </a>
 
     {{-- Bootstrap JS --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

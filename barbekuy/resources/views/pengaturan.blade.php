@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengaturan Akun | Barbekuy</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+
+    {{-- Icon --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {{-- Bootstrap CSS --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -15,30 +21,56 @@
             font-family: 'Poppins', sans-serif;
         }
 
+        /* ✨ TAMBAHAN: kunci tinggi & matikan scroll besar */
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            /* << ini yang menghilangkan scroll besar */
+        }
+
         body {
             background: #f5f6fa;
-            display: flex;
             min-height: 100vh;
+        }
+
+        .main-content {
+            min-height: calc(100vh - 56px);
+            display: flex;
+            flex-direction: column;
         }
 
         .content {
             flex: 1;
             padding: 30px 40px;
+            /* jangan pakai overflow-y di sini */
+            scroll-behavior: smooth;
         }
 
         .content-box {
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            padding: 28px;
+            /* padding: 28px;  <- biarkan pakai layout baru */
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 56px - 60px);
+            /* kira-kira tinggi card */
         }
 
         .tabs {
             display: flex;
             border-bottom: 2px solid #eee;
-            margin-bottom: 25px;
             flex-wrap: wrap;
             gap: 5px;
+            padding: 20px 28px 0 28px;
+        }
+
+        .tab-scroll {
+            flex: 1;
+            overflow-y: auto;
+            /* hanya ini yang boleh scroll */
+            padding: 20px 28px 28px 28px;
         }
 
         .tab-btn {
@@ -102,9 +134,10 @@
             background: #751A25;
             color: #fff;
             border: none;
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
+            font-size: 13px;
             transition: 0.3s;
         }
 
@@ -128,9 +161,10 @@
             display: block;
         }
 
-        input,
-        select,
-        textarea {
+        /* HANYA untuk form di konten pengaturan, bukan navbar */
+        .main-content input,
+        .main-content select,
+        .main-content textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -156,10 +190,11 @@
             background: #751A25;
             color: #fff;
             border: none;
-            padding: 10px 20px;
+            padding: 6px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
+            font-size: 13px;
             transition: 0.3s;
         }
 
@@ -186,11 +221,12 @@
             align-self: end;
             background: #751A25;
             color: #fff;
-            padding: 10px 20px;
+            padding: 6px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
+            font-size: 13px;
             transition: 0.3s;
         }
 
@@ -261,21 +297,6 @@
             background: #3d030a;
         }
 
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px 40px;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
-
         .content::-webkit-scrollbar {
             width: 8px;
         }
@@ -311,130 +332,119 @@
 </head>
 
 <body>
-    @include('layouts.navbarAdmin')
+    @include('layouts.navbar')
 
     <main class="main-content">
         <div class="content">
-            {{-- Flash messages --}}
-            @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-            @if($errors->any())
-            <div class="alert alert-error">
-                <ul style="margin-left:18px;">
-                    @foreach($errors->all() as $e)
-                    <li>{{ $e }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
+            <div class="container">
+                @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
 
-            <div class="content-box">
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="profile">Pengaturan Profil</button>
-                    <button class="tab-btn" data-tab="password">Pengaturan Password</button>
-                    <button class="tab-btn" data-tab="notif">Pengaturan Notifikasi</button>
-                    <button class="tab-btn" data-tab="verify">Pengaturan Verifikasi</button>
+                @if($errors->any())
+                <div class="alert alert-error">
+                    <ul style="margin-left:18px;">
+                        @foreach($errors->all() as $e)
+                        <li>{{ $e }}</li>
+                        @endforeach
+                    </ul>
                 </div>
+                @endif
 
-                {{-- PROFILE --}}
-                <div id="profile" class="tab-content active">
-                    <form class="profile-settings"
-                        action="{{ route('admin.settings.profile.update') }}"
-                        method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
+                <div class="content-box">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="profile">Pengaturan Profil</button>
+                        <button class="tab-btn" data-tab="password">Pengaturan Password</button>
+                    </div>
 
-                        <div class="profile-left">
-                            {{-- konsisten dengan kolom "avatar" --}}
-                            <img
-                                src="{{ auth()->user()->avatar ? asset('storage/'.auth()->user()->avatar) : asset('images/paket ber4 xtra.png') }}"
-                                alt="Avatar">
-                            <br>
-                            <button type="button" class="btn-upload">Upload Baru</button>
-                            <input type="file" id="uploadFoto" name="avatar" accept="image/*" style="display:none;">
+                    <div class="tab-scroll">
+                        {{-- PROFILE --}}
+                        <div id="profile" class="tab-content active">
+                            <form class="profile-settings" action="{{ route('pengaturan.profil.update') }}" method="POST"
+                                enctype="multipart/form-data">
+                                @csrf
+
+                                <div class="profile-left">
+                                    <img
+                                        src="{{ auth()->user()->avatar_path ? asset('storage/'.auth()->user()->avatar_path) : asset('images/paket ber4 xtra.png') }}"
+                                        alt="Avatar">
+                                    <br>
+                                    <button type="button" class="btn-upload">Upload Baru</button>
+                                    <input type="file" id="uploadFoto" name="avatar" accept="image/*" style="display:none;">
+                                </div>
+
+                                <div class="profile-right">
+                                    <label>Nama Depan *</label>
+                                    <input type="text" name="first_name" placeholder="Nama depan"
+                                        value="{{ old('first_name', auth()->user()->first_name) }}"
+                                        readonly class="readonly-field">
+
+                                    <label>Nama Belakang *</label>
+                                    <input type="text" name="last_name" placeholder="Nama belakang"
+                                        value="{{ old('last_name', auth()->user()->last_name) }}"
+                                        readonly class="readonly-field">
+
+                                    <label>Email</label>
+                                    <input type="email" name="email" placeholder="email@gmail.com"
+                                        value="{{ old('email', auth()->user()->email) }}"
+                                        readonly class="readonly-field">
+
+                                    <label>Nomor HP</label>
+                                    <input type="text" name="phone" placeholder="Nomor HP"
+                                        value="{{ old('phone', auth()->user()->phone) }}"
+                                        readonly class="readonly-field">
+                                    <label>Jenis Kelamin</label>
+                                    <div class="gender-group">
+                                        <label>
+                                            <input type="radio" name="gender" value="L"
+                                                {{ old('gender', auth()->user()->gender) === 'L' ? 'checked' : '' }}
+                                                disabled>
+                                            Laki-laki
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="gender" value="P"
+                                                {{ old('gender', auth()->user()->gender) === 'P' ? 'checked' : '' }}
+                                                disabled>
+                                            Perempuan
+                                        </label>
+                                    </div>
+
+                                    <label>Alamat</label>
+                                    <textarea name="address" placeholder="Alamat"
+                                        readonly class="readonly-field">{{ old('address', auth()->user()->address) }}</textarea>
+
+                                    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                                        <button type="button" id="btnEdit" class="btn-save">Edit</button>
+                                        <button type="submit" id="btnSave" class="btn-save" style="display:none;">Simpan</button>
+                                        <button type="button" id="btnCancel" class="btn-save"
+                                            style="background:#ccc;color:#333;display:none;">Batal</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
 
-                        <div class="profile-right">
-                            <label>Nama Depan *</label>
-                            <input type="text" name="first_name" placeholder="Nama depan" value="{{ old('first_name', auth()->user()->first_name) }}">
+                        {{-- PASSWORD --}}
+                        <div id="password" class="tab-content">
+                            <form class="password-form" action="{{ route('pengaturan.password.update') }}" method="POST">
+                                @csrf
+                                <label>Password Lama</label>
+                                <input type="password" name="old_password" placeholder="Masukkan password lama">
 
-                            <label>Nama Belakang *</label>
-                            <input type="text" name="last_name" placeholder="Nama belakang" value="{{ old('last_name', auth()->user()->last_name) }}">
+                                <label>Password Baru</label>
+                                <input type="password" name="password" placeholder="Masukkan password baru">
 
-                            <label>Email</label>
-                            <input type="email" name="email" placeholder="email@barbekuy.com" value="{{ old('email', auth()->user()->email) }}">
+                                <label>Konfirmasi Password Baru</label>
+                                <input type="password" name="password_confirmation" placeholder="Konfirmasi password baru">
 
-                            <label>Nomor HP</label>
-                            <input type="text" name="phone" placeholder="+62 812 3456 7890" value="{{ old('phone', auth()->user()->phone) }}">
-
-                            <label>Jenis Kelamin</label>
-                            <div class="gender-group">
-                                <label><input type="radio" name="gender" value="L" {{ old('gender', auth()->user()->gender) === 'L' ? 'checked' : '' }}> Laki-laki</label>
-                                <label><input type="radio" name="gender" value="P" {{ old('gender', auth()->user()->gender) === 'P' ? 'checked' : '' }}> Perempuan</label>
-                            </div>
-
-                            <label>ID</label>
-                            <input type="text" name="national_id" placeholder="1599 000 7788 8DER" value="{{ old('national_id', auth()->user()->national_id) }}">
-
-                            <label>Alamat</label>
-                            <textarea name="address" placeholder="Jl. Soedirman No. 23, Purwokerto">{{ old('address', auth()->user()->address) }}</textarea>
-
-                            <button class="btn-save" type="submit">Simpan Perubahan</button>
+                                <button type="submit">Simpan Password</button>
+                            </form>
                         </div>
-                    </form>
-                </div>
-
-                {{-- PASSWORD --}}
-                <div id="password" class="tab-content">
-                    <form class="password-form" action="{{ route('admin.settings.password.update') }}" method="POST">
-                        @csrf
-                        <label>Password Lama</label>
-                        <input type="password" name="old_password" placeholder="Masukkan password lama">
-
-                        <label>Password Baru</label>
-                        <input type="password" name="password" placeholder="Masukkan password baru">
-
-                        <label>Konfirmasi Password Baru</label>
-                        <input type="password" name="password_confirmation" placeholder="Konfirmasi password baru">
-
-                        <button type="submit">Simpan Password</button>
-                    </form>
-                </div>
-
-                {{-- NOTIFIKASI --}}
-                <div id="notif" class="tab-content">
-                    <form class="notif-settings" action="{{ route('admin.settings.notif.update') }}" method="POST">
-                        @csrf
-                        <div class="notif-item">
-                            <span>Notifikasi Email</span>
-                            <input type="checkbox" name="notif_email" value="1" {{ old('notif_email', auth()->user()->notif_email) ? 'checked' : '' }}>
-                        </div>
-                        <div class="notif-item">
-                            <span>Notifikasi Pesan Masuk</span>
-                            <input type="checkbox" name="notif_message" value="1" {{ old('notif_message', auth()->user()->notif_message) ? 'checked' : '' }}>
-                        </div>
-                        <div class="notif-item">
-                            <span>Notifikasi Pembayaran</span>
-                            <input type="checkbox" name="notif_payment" value="1" {{ old('notif_payment', auth()->user()->notif_payment) ? 'checked' : '' }}>
-                        </div>
-
-                        <button class="btn-save" type="submit" style="align-self:end;">Simpan</button>
-                    </form>
-                </div>
-
-                {{-- VERIFIKASI --}}
-                <div id="verify" class="tab-content">
-                    <form class="verification" action="{{ route('admin.settings.verify') }}" method="POST">
-                        @csrf
-                        <label>Kode Verifikasi</label>
-                        <input type="text" name="verification_code" placeholder="Masukkan kode 6 digit" value="{{ old('verification_code') }}">
-                        <button type="submit">Verifikasi Akun</button>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // Tabs
@@ -464,6 +474,32 @@
                     };
                     reader.readAsDataURL(file);
                 }
+            });
+        }
+
+        // Mode Edit Profil
+        const btnEdit = document.getElementById('btnEdit');
+        const btnSave = document.getElementById('btnSave');
+        const btnCancel = document.getElementById('btnCancel');
+
+        if (btnEdit && btnSave && btnCancel) {
+            const profileFields = document.querySelectorAll(
+                "#profile .profile-right input, #profile .profile-right textarea, #profile .profile-right select"
+            );
+
+            btnEdit.addEventListener("click", () => {
+                profileFields.forEach(f => {
+                    f.removeAttribute("readonly");
+                    f.removeAttribute("disabled");
+                });
+
+                btnEdit.style.display = "none";
+                btnSave.style.display = "inline-block";
+                btnCancel.style.display = "inline-block";
+            });
+
+            btnCancel.addEventListener("click", () => {
+                window.location.reload();
             });
         }
     </script>
