@@ -8,22 +8,22 @@ use Illuminate\Validation\Rule;
 
 class TransaksiController extends Controller
 {
-    // ✅ daftar status resmi
+    // ✅ daftar status resmi (SUDAH DISESUAIKAN)
     public const STATUSES = [
         'Belum Bayar',
-        'Sedang Proses',
-        'Disiapkan',
+        'Diproses',
+        'Siap Diambil',
         'Disewa',
         'Selesai',
         'Dibatalkan',
     ];
 
-    public function index(Request $request) // ← butuh Request
+    public function index(Request $request)
     {
-        $q       = trim((string) $request->query('q', ''));
-        $status  = $request->query('status');
-        $from    = $request->query('from');
-        $to      = $request->query('to');
+        $q = trim((string) $request->query('q', ''));
+        $status = $request->query('status');
+        $from = $request->query('from');
+        $to = $request->query('to');
 
         $orders = Pemesanan::with(['details.product', 'user'])
             ->when($status && in_array($status, self::STATUSES, true), function ($qb) use ($status) {
@@ -41,7 +41,7 @@ class TransaksiController extends Controller
                 $qb->where(function ($w) use ($q) {
                     $w->where('no_pesanan', 'like', "%{$q}%")
                         ->orWhere('nama_penerima', 'like', "%{$q}%")
-                        ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$q}%"));
+                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$q}%"));
                 });
             })
             ->orderByDesc('created_at')

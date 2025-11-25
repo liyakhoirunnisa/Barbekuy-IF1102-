@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;   // ⬅️ tambah
-use Carbon\Carbon;                  // ⬅️ opsional (kalau mau format waktu di blade)
+
+// ⬅️ opsional (kalau mau format waktu di blade)
 
 class BerandaController extends Controller
 {

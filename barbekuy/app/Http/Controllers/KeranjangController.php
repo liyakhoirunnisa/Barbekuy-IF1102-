@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
-use App\Models\Produk;
-use Carbon\Carbon;
 
 class KeranjangController extends Controller
 {
@@ -18,6 +17,7 @@ class KeranjangController extends Controller
         uasort($keranjang, function ($a, $b) {
             return ($b['added_at'] ?? 0) <=> ($a['added_at'] ?? 0);
         });
+
         return view('keranjang', compact('keranjang'));
     }
 
@@ -26,11 +26,12 @@ class KeranjangController extends Controller
         $keranjang = session()->get('keranjang', []);
         $total = 0;
         foreach ($keranjang as $item) {
-            $total += (int)($item['jumlah'] ?? 1);
+            $total += (int) ($item['jumlah'] ?? 1);
         }
+
         return response()->json([
             'success' => true,
-            'count'   => $total,
+            'count' => $total,
         ]);
     }
 
@@ -43,32 +44,34 @@ class KeranjangController extends Controller
         $keranjang = session()->get('keranjang', []);
 
         // buat key unik berdasarkan produk + tanggal sewa
-        $tanggalMulai   = $request->input('tanggal_mulai', now()->toDateString());
+        $tanggalMulai = $request->input('tanggal_mulai', now()->toDateString());
         $tanggalPengembalian = $request->input('tanggal_pengembalian', now()->toDateString());
-        $key = $id . '_' . $tanggalMulai . '_' . $tanggalPengembalian;
+        $key = $id.'_'.$tanggalMulai.'_'.$tanggalPengembalian;
 
         // jika sudah ada entri yang sama persis (produk + tanggal), tambahkan jumlah
         if (isset($keranjang[$key])) {
-            $keranjang[$key]['jumlah'] += (int)$request->input('jumlah', 1);
+            $keranjang[$key]['jumlah'] += (int) $request->input('jumlah', 1);
         } else {
             // jika belum ada, tambahkan item baru
             $keranjang[$key] = [
-                'produk_id'       => $produk->id_produk,
-                'tanggal_mulai'   => $tanggalMulai,
+                'produk_id' => $produk->id_produk,
+                'tanggal_mulai' => $tanggalMulai,
                 'tanggal_pengembalian' => $tanggalPengembalian,
-                'jumlah'          => (int)$request->input('jumlah', 1),
-                'added_at'        => now()->timestamp, // untuk urutan terbaru
+                'jumlah' => (int) $request->input('jumlah', 1),
+                'added_at' => now()->timestamp, // untuk urutan terbaru
             ];
         }
 
         session()->put('keranjang', $keranjang);
         $total = 0;
-        foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
+        foreach ($keranjang as $row) {
+            $total += (int) ($row['jumlah'] ?? 1);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil ditambahkan ke keranjang.',
-            'count'   => $total, // <— penting untuk update badge
+            'count' => $total, // <— penting untuk update badge
         ]);
     }
 
@@ -77,11 +80,11 @@ class KeranjangController extends Controller
     {
         $data = $request->json()->all() ?: $request->all();
 
-        $tanggalMulai         = $data['tanggal_mulai'] ?? now()->toDateString();
-        $tanggalPengembalian  = $data['tanggal_pengembalian'] ?? now()->toDateString();
+        $tanggalMulai = $data['tanggal_mulai'] ?? now()->toDateString();
+        $tanggalPengembalian = $data['tanggal_pengembalian'] ?? now()->toDateString();
 
         $oldKey = $data['key'] ?? null;                    // ⬅️ key lama dari client
-        $newKey = $id . '_' . $tanggalMulai . '_' . $tanggalPengembalian;
+        $newKey = $id.'_'.$tanggalMulai.'_'.$tanggalPengembalian;
 
         $keranjang = session()->get('keranjang', []);
 
@@ -99,11 +102,11 @@ class KeranjangController extends Controller
         }
 
         // 2) Update field
-        $row['tanggal_mulai']        = $tanggalMulai;
+        $row['tanggal_mulai'] = $tanggalMulai;
         $row['tanggal_pengembalian'] = $tanggalPengembalian;
 
         if (isset($data['jumlah'])) {
-            $row['jumlah'] = max(1, (int)$data['jumlah']);
+            $row['jumlah'] = max(1, (int) $data['jumlah']);
         }
 
         // 3) Jika key berubah (tanggal berubah) → migrasi entry
@@ -118,14 +121,14 @@ class KeranjangController extends Controller
 
         session()->put('keranjang', $keranjang);
 
-        $produk   = \App\Models\Produk::where('id_produk', $id)->firstOrFail();
-        $subtotal = (int)$produk->harga * (int)$row['jumlah'];
+        $produk = \App\Models\Produk::where('id_produk', $id)->firstOrFail();
+        $subtotal = (int) $produk->harga * (int) $row['jumlah'];
 
         return response()->json([
-            'success'   => true,
-            'subtotal'  => number_format($subtotal, 0, ',', '.'),
-            'jumlah'    => $row['jumlah'],
-            'new_key'   => $newKeyCreated,                // ⬅️ null kalau tidak berubah
+            'success' => true,
+            'subtotal' => number_format($subtotal, 0, ',', '.'),
+            'jumlah' => $row['jumlah'],
+            'new_key' => $newKeyCreated,                // ⬅️ null kalau tidak berubah
         ]);
     }
 
@@ -140,12 +143,14 @@ class KeranjangController extends Controller
 
         // hitung ulang total badge
         $total = 0;
-        foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
+        foreach ($keranjang as $row) {
+            $total += (int) ($row['jumlah'] ?? 1);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Produk dihapus dari keranjang.',
-            'count'   => $total,
+            'count' => $total,
             'removed_keys' => [$key],
         ]);
     }
@@ -154,7 +159,9 @@ class KeranjangController extends Controller
     public function hapusBanyak(Request $request)
     {
         $keys = $request->input('keys', []); // array of composite keys
-        if (!is_array($keys)) $keys = [];
+        if (! is_array($keys)) {
+            $keys = [];
+        }
 
         $keranjang = session()->get('keranjang', []);
 
@@ -170,12 +177,14 @@ class KeranjangController extends Controller
 
         // hitung ulang total badge
         $total = 0;
-        foreach ($keranjang as $row) $total += (int)($row['jumlah'] ?? 1);
+        foreach ($keranjang as $row) {
+            $total += (int) ($row['jumlah'] ?? 1);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Produk terpilih dihapus dari keranjang.',
-            'count'   => $total,
+            'count' => $total,
             'removed_keys' => $removed,
         ]);
     }

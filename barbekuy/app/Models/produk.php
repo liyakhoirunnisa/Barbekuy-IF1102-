@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Produk extends Model
 {
     protected $table = 'produk';
+
     protected $primaryKey = 'id_produk';
+
     public $incrementing = false; // Nonaktifkan auto increment
+
     protected $keyType = 'string'; // Primary key tipe string
 
     protected $fillable = [
@@ -19,6 +22,6 @@ class Produk extends Model
         'stok',
         'status_ketersediaan',
         'deskripsi',
-        'gambar'
+        'gambar',
     ];
 }

@@ -8,8 +8,11 @@ use Illuminate\Support\Facades\DB;
 class Pemesanan extends Model
 {
     protected $table = 'pemesanan';
+
     protected $primaryKey = 'id_pesanan';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     // ✅ Sesuai kolom di migration terbaru
@@ -27,11 +30,12 @@ class Pemesanan extends Model
         // ⬇️ tambahkan ini
         'metode_pembayaran',
         'payment_channel',
+        'snap_token',
     ];
 
     // ✅ Casting tanggal ke Carbon
     protected $casts = [
-        'tanggal_sewa'         => 'date',
+        'tanggal_sewa' => 'date',
         'tanggal_pengembalian' => 'date',
     ];
 
@@ -43,11 +47,11 @@ class Pemesanan extends Model
     public static function generateNoPesanan(): string
     {
         return DB::transaction(function () {
-            $today  = now()->timezone(config('app.timezone', 'Asia/Jakarta'))->format('Ymd');
-            $prefix = 'BR' . $today . '-';
+            $today = now()->timezone(config('app.timezone', 'Asia/Jakarta'))->format('Ymd');
+            $prefix = 'BR'.$today.'-';
 
             // lockForUpdate mencegah race condition
-            $last = static::where('no_pesanan', 'like', $prefix . '%')
+            $last = static::where('no_pesanan', 'like', $prefix.'%')
                 ->lockForUpdate()
                 ->orderByDesc('id_pesanan')
                 ->first();
@@ -57,7 +61,7 @@ class Pemesanan extends Model
                 $next = (int) $m[1] + 1;
             }
 
-            return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+            return $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
         }, 3);
     }
 

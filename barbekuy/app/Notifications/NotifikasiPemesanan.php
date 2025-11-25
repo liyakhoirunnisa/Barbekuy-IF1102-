@@ -28,10 +28,10 @@ class NotifikasiPemesanan extends Notification
 
         return [
             'nama_pengguna' => $this->namaPengguna,
-            'pesan'         => $this->pesan,            // contoh: "Zahra melakukan pemesanan #BR2025..."
-            'no_pesanan'    => $nomor,                  // <- utamanya ini
-            'id_pesanan'    => $nomor,                  // <- fallback utk kode lama yang baca 'id_pesanan'
-            'url'           => route('admin.transaksi', ['order' => $nomor]),
+            'pesan' => $this->pesan,            // contoh: "Zahra melakukan pemesanan #BR2025..."
+            'no_pesanan' => $nomor,                  // <- utamanya ini
+            'id_pesanan' => $nomor,                  // <- fallback utk kode lama yang baca 'id_pesanan'
+            'url' => route('admin.transaksi', ['order' => $nomor]),
         ];
     }
 }

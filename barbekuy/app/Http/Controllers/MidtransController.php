@@ -2,33 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pemesanan;
 use Illuminate\Http\Request;
 use Midtrans\Config;
-use Midtrans\Snap;
 use Midtrans\Notification;
-use App\Models\Pemesanan;
-use Illuminate\Support\Facades\Log;
+use Midtrans\Snap;
 
 class MidtransController extends Controller
 {
     public function getSnapToken(Request $request)
     {
         // Konfigurasi Midtrans
-        Config::$serverKey    = config('midtrans.server_key');
+        Config::$serverKey = config('midtrans.server_key');
         Config::$isProduction = config('midtrans.is_production');
-        Config::$isSanitized  = config('midtrans.is_sanitized');
-        Config::$is3ds        = config('midtrans.is_3ds');
+        Config::$isSanitized = config('midtrans.is_sanitized');
+        Config::$is3ds = config('midtrans.is_3ds');
 
         // Contoh: masih dummy, sekarang kamu sebenarnya sudah buat transaksi dari PemesananController
         $params = [
             'transaction_details' => [
-                'order_id'     => 'order-' . rand(),
+                'order_id' => 'order-'.rand(),
                 'gross_amount' => 10000,
             ],
             'customer_details' => [
                 'first_name' => 'Pelanggan Barbekuy',
-                'email'      => 'pelanggan@example.com',
-                'phone'      => '08123456789',
+                'email' => 'pelanggan@example.com',
+                'phone' => '08123456789',
             ],
         ];
 
@@ -49,19 +48,19 @@ class MidtransController extends Controller
     public function notificationHandler(Request $request)
     {
         // set config
-        Config::$serverKey    = config('midtrans.server_key');
+        Config::$serverKey = config('midtrans.server_key');
         Config::$isProduction = config('midtrans.is_production');
-        Config::$isSanitized  = config('midtrans.is_sanitized');
-        Config::$is3ds        = config('midtrans.is_3ds');
+        Config::$isSanitized = config('midtrans.is_sanitized');
+        Config::$is3ds = config('midtrans.is_3ds');
 
-        $notif = new Notification();
+        $notif = new Notification;
 
-        $status     = $notif->transaction_status;
-        $orderId    = $notif->order_id;
+        $status = $notif->transaction_status;
+        $orderId = $notif->order_id;
         $paymentType = $notif->payment_type ?? null;
 
         $order = Pemesanan::where('id_pesanan', $orderId)->first();
-        if (!$order) {
+        if (! $order) {
             return response()->json(['error' => 'not found'], 404);
         }
 
@@ -72,7 +71,7 @@ class MidtransController extends Controller
             // VA BCA/BNI/BRI, dll
             $bank = $notif->va_numbers[0]->bank ?? null;   // contoh: "bca"
             if ($bank) {
-                $channel = strtoupper($bank) . ' VA';      // → "BCA VA"
+                $channel = strtoupper($bank).' VA';      // → "BCA VA"
             }
         } elseif ($paymentType === 'echannel') {
             // Mandiri bill payment

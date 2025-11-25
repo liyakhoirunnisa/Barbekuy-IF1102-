@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PengaturanUserController extends Controller
 {
@@ -27,17 +27,17 @@ class PengaturanUserController extends Controller
         // ✅ Field disesuaikan dengan form di pengaturan.blade.php
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
-            'last_name'  => ['required', 'string', 'max:100'],
-            'email'      => [
+            'last_name' => ['required', 'string', 'max:100'],
+            'email' => [
                 'required',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
-            'phone'   => ['nullable', 'string', 'max:30'],
-            'gender'  => ['nullable', Rule::in(['L', 'P'])],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'gender' => ['nullable', Rule::in(['L', 'P'])],
             'address' => ['nullable', 'string', 'max:2000'],
-            'avatar'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         // ✅ Handle avatar (opsional)
@@ -55,12 +55,12 @@ class PengaturanUserController extends Controller
 
         // ✅ Update user dengan data tervalidasi
         $user->update([
-            'first_name'  => $validated['first_name'],
-            'last_name'   => $validated['last_name'],
-            'email'       => $validated['email'],
-            'phone'       => $validated['phone']   ?? $user->phone,
-            'gender'      => $validated['gender']  ?? $user->gender,
-            'address'     => $validated['address'] ?? $user->address,
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? $user->phone,
+            'gender' => $validated['gender'] ?? $user->gender,
+            'address' => $validated['address'] ?? $user->address,
             'avatar_path' => $validated['avatar_path'] ?? $user->avatar_path,
         ]);
 
@@ -73,13 +73,13 @@ class PengaturanUserController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'old_password'          => ['required', 'string'],
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'old_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'password_confirmation' => ['required', 'string', 'min:8'],
         ]);
 
         // cek password lama
-        if (!Hash::check($request->old_password, $user->password)) {
+        if (! Hash::check($request->old_password, $user->password)) {
             return back()
                 ->withErrors(['old_password' => 'Password lama tidak sesuai.'])
                 ->withInput();

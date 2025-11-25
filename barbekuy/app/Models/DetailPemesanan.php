@@ -13,7 +13,9 @@ class DetailPemesanan extends Model
     protected $primaryKey = 'id_detail';   // <- sesuai migration
 
     public $timestamps = true;
+
     protected $keyType = 'int';
+
     public $incrementing = true;
 
     protected $fillable = [
@@ -25,9 +27,9 @@ class DetailPemesanan extends Model
     ];
 
     protected $casts = [
-        'jumlah_sewa'  => 'integer',
-        'durasi_hari'  => 'integer',
-        'subtotal'     => 'integer',
+        'jumlah_sewa' => 'integer',
+        'durasi_hari' => 'integer',
+        'subtotal' => 'integer',
     ];
 
     // ===== RELATIONS =====
@@ -48,6 +50,7 @@ class DetailPemesanan extends Model
     {
         return $this->belongsTo(Produk::class, 'id_produk', 'id_produk');
     }
+
     public function ulasan()
     {
         return $this->hasOne(Ulasan::class, 'id_detail', 'id_detail');

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-use Laravel\Socialite\Facades\Socialite; 
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -26,13 +26,13 @@ class AuthController extends Controller
     {
         // ✅ Validasi input
         $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         // Ambil kredensial & status "ingat saya"
         $credentials = $request->only('email', 'password');
-        $remember    = $request->boolean('remember'); // true kalau checkbox dicentang
+        $remember = $request->boolean('remember'); // true kalau checkbox dicentang
 
         // 🔑 Coba login dengan fitur remember bawaan Laravel
         if (Auth::attempt($credentials, $remember)) {
@@ -42,7 +42,7 @@ class AuthController extends Controller
             $user = Auth::user();
 
             // Pastikan user punya role (default user)
-            if (!$user->role) {
+            if (! $user->role) {
                 $user->role = 'user';
                 $user->save();
             }
@@ -109,12 +109,12 @@ class AuthController extends Controller
 
         $user = User::where('email', $googleUser->getEmail())->first();
 
-        if (!$user) {
+        if (! $user) {
             $user = User::create([
-                'name'     => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Pengguna Google',
-                'email'    => $googleUser->getEmail(),
+                'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Pengguna Google',
+                'email' => $googleUser->getEmail(),
                 'password' => Hash::make(Str::random(32)),
-                'role'     => 'user',
+                'role' => 'user',
             ]);
         }
 
@@ -141,16 +141,16 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|string|email|max:255|unique:users',
-            'password'              => 'required|string|min:6|confirmed',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => 'user',
+            'role' => 'user',
         ]);
 
         return redirect()->route('login')->with('success', 'Pendaftaran berhasil, silakan masuk!');
@@ -162,17 +162,17 @@ class AuthController extends Controller
     public function registerAdmin(Request $request)
     {
         $request->validate([
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|string|email|max:255|unique:users',
-            'password'              => 'required|string|min:6|confirmed',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         // Simpan user baru dengan role admin
         User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => 'admin',
+            'role' => 'admin',
         ]);
 
         return redirect()->route('login')->with('success', 'Akun admin berhasil dibuat! Silakan login.');

@@ -32,8 +32,8 @@ class UlasanController extends Controller
     {
         $request->validate([
             'order_detail_id' => ['required', 'integer', 'exists:detail_pemesanan,id_detail'],
-            'rating'          => ['required', 'integer', 'min:1', 'max:5'],
-            'comment'         => ['required', 'string', 'max:1000'],
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'comment' => ['required', 'string', 'max:1000'],
         ]);
 
         $userId = Auth::id();
@@ -46,7 +46,7 @@ class UlasanController extends Controller
             ->select('dp.id_detail', 'dp.id_produk')
             ->first();
 
-        if (!$detail) {
+        if (! $detail) {
             return back()->withErrors('Detail pesanan tidak ditemukan / bukan milik akun ini.');
         }
 
@@ -61,11 +61,11 @@ class UlasanController extends Controller
         }
 
         DB::table('ulasan')->insert([
-            'id_user'   => $userId,
+            'id_user' => $userId,
             'id_produk' => $detail->id_produk,           // ambil dari detail
             'id_detail' => $detail->id_detail,           // relasi ke detail_pemesanan
-            'rating'    => $request->rating,
-            'komentar'  => $request->comment,            // map dari textarea "comment"
+            'rating' => $request->rating,
+            'komentar' => $request->comment,            // map dari textarea "comment"
             'created_at' => now(),
             'updated_at' => now(),
         ]);

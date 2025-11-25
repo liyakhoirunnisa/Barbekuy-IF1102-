@@ -2,29 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use App\Models\Produk; // ⬅️ WAJIB: dipakai oleh cekStok()
+use Illuminate\Support\Facades\Storage; // ⬅️ WAJIB: dipakai oleh cekStok()
 
 class ProdukController extends Controller
 {
-    /** 
-     * Halaman produk admin 
+    /**
+     * Halaman produk admin
      */
     public function adminIndex()
     {
         $produk = DB::table('produk')->get();
+
         return view('admin.produk', compact('produk'));
     }
 
-    /** 
-     * Halaman menu (user) 
+    /**
+     * Halaman menu (user)
      */
     public function index()
     {
         $produk = DB::table('produk')->get();
+
         return view('menu', compact('produk'));
     }
 
@@ -34,52 +35,52 @@ class ProdukController extends Controller
     public function cekStok(Request $request, string $id)
     {
         $data = $request->validate([
-            'tanggal_mulai'        => ['required', 'date'],
+            'tanggal_mulai' => ['required', 'date'],
             'tanggal_pengembalian' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'jumlah'               => ['required', 'integer', 'min:1'],
+            'jumlah' => ['required', 'integer', 'min:1'],
         ]);
 
         $produk = Produk::find($id); // ⬅️ pastikan import model di atas
-        if (!$produk) {
+        if (! $produk) {
             return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan.'], 404);
         }
 
         // Versi dasar: stok_tersedia = stok di tabel produk
         // (kalau sudah ada tabel booking/pesanan, hitung sisa = stok - jumlah_terbooking_di_rentang)
-        $stokTersedia = (int)($produk->stok ?? 0);
+        $stokTersedia = (int) ($produk->stok ?? 0);
 
         return response()->json([
-            'success'        => true,
-            'stok'           => (int)$produk->stok,
-            'stok_tersedia'  => $stokTersedia,
-            'bisa_dipesan'   => $stokTersedia >= (int)$data['jumlah'],
+            'success' => true,
+            'stok' => (int) $produk->stok,
+            'stok_tersedia' => $stokTersedia,
+            'bisa_dipesan' => $stokTersedia >= (int) $data['jumlah'],
         ]);
     }
 
-    /** 
-     * Tambah produk baru 
+    /**
+     * Tambah produk baru
      */
     public function store(Request $request)
     {
         $request->validate([
             'nama_produk' => 'required|string|max:100',
-            'kategori'    => 'required|string|max:50',
-            'stok'        => 'required|integer|min:0',
-            'deskripsi'   => 'required|string',
-            'harga'       => 'required|integer|min:0',
-            'gambar'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+            'kategori' => 'required|string|max:50',
+            'stok' => 'required|integer|min:0',
+            'deskripsi' => 'required|string',
+            'harga' => 'required|integer|min:0',
+            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         // Generate ID baru (PR001, PR002, dst)
         $lastProduct = DB::table('produk')->orderBy('id_produk', 'desc')->first();
-        $newNumber   = $lastProduct ? intval(substr($lastProduct->id_produk, 2)) + 1 : 1;
-        $newId       = 'PR' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $newNumber = $lastProduct ? intval(substr($lastProduct->id_produk, 2)) + 1 : 1;
+        $newId = 'PR'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
         // Upload gambar dengan nama file = id_produk
         $gambarPath = null;
         if ($request->hasFile('gambar')) {
-            $file     = $request->file('gambar');
-            $fileName = $newId . '.' . $file->getClientOriginalExtension();
+            $file = $request->file('gambar');
+            $fileName = $newId.'.'.$file->getClientOriginalExtension();
             $gambarPath = $file->storeAs('produk', $fileName, 'public');
         }
 
@@ -89,16 +90,16 @@ class ProdukController extends Controller
 
         // Simpan ke database
         DB::table('produk')->insert([
-            'id_produk'           => $newId,
-            'nama_produk'         => $request->nama_produk,
-            'kategori'            => $request->kategori,
-            'stok'                => $request->stok,
-            'deskripsi'           => $request->deskripsi,
-            'harga'               => $request->harga,
-            'gambar'              => $gambarPath,
+            'id_produk' => $newId,
+            'nama_produk' => $request->nama_produk,
+            'kategori' => $request->kategori,
+            'stok' => $request->stok,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'gambar' => $gambarPath,
             'status_ketersediaan' => $status,
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Produk berhasil ditambahkan!');
@@ -108,15 +109,15 @@ class ProdukController extends Controller
     {
         $request->validate([
             'nama_produk' => 'required|string|max:100',
-            'kategori'    => 'required|string|max:50',
-            'stok'        => 'required|integer|min:0',
-            'deskripsi'   => 'required|string',
-            'harga'       => 'required|integer|min:0',
-            'gambar'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+            'kategori' => 'required|string|max:50',
+            'stok' => 'required|integer|min:0',
+            'deskripsi' => 'required|string',
+            'harga' => 'required|integer|min:0',
+            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $produk = DB::table('produk')->where('id_produk', $id)->first();
-        if (!$produk) {
+        if (! $produk) {
             return redirect()->back()->with('error', 'Produk tidak ditemukan.');
         }
 
@@ -125,8 +126,8 @@ class ProdukController extends Controller
             if ($produk->gambar && Storage::disk('public')->exists($produk->gambar)) {
                 Storage::disk('public')->delete($produk->gambar);
             }
-            $file     = $request->file('gambar');
-            $fileName = $id . '.' . $file->getClientOriginalExtension();
+            $file = $request->file('gambar');
+            $fileName = $id.'.'.$file->getClientOriginalExtension();
             $gambarPath = $file->storeAs('produk', $fileName, 'public');
         }
 
@@ -135,14 +136,14 @@ class ProdukController extends Controller
         $status = $request->stok > 0 ? 'tersedia' : 'tidak_tersedia';
 
         DB::table('produk')->where('id_produk', $id)->update([
-            'nama_produk'         => $request->nama_produk,
-            'kategori'            => $request->kategori,
-            'stok'                => $request->stok,
-            'deskripsi'           => $request->deskripsi,
-            'harga'               => $request->harga,
-            'gambar'              => $gambarPath,
+            'nama_produk' => $request->nama_produk,
+            'kategori' => $request->kategori,
+            'stok' => $request->stok,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'gambar' => $gambarPath,
             'status_ketersediaan' => $status,
-            'updated_at'          => now(),
+            'updated_at' => now(),
         ]);
 
         if ($request->ajax() || $request->expectsJson()) {
@@ -159,7 +160,7 @@ class ProdukController extends Controller
     {
         $produk = DB::table('produk')->where('id_produk', $id)->first();
 
-        if (!$produk) {
+        if (! $produk) {
             return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan.'], 404);
         }
 

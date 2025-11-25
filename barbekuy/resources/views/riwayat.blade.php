@@ -13,55 +13,79 @@
     <style>
         :root {
             --hdr: 56px;
-            /* tinggi header (sama seperti pemesanan) */
-            --tabs: 56px;
-            /* tinggi bar tabs */
+            /* tinggi header */
+            --tabs: 48px;
+            /* kira-kira tinggi bar tab */
         }
 
+        html,
         body {
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+            overflow-x: hidden;
             font-family: 'Poppins', sans-serif;
             background: #f9f9f9;
-            margin: 0;
         }
 
-        /* mirror .container Bootstrap */
+        .muted {
+            color: #888;
+            font-size: 12px;
+        }
+
+        /* ===== Layout Container (mirip Bootstrap .container) ===== */
         .bb-container {
             width: 100%;
             margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        @media (min-width: 576px) {
+            .bb-container {
+                max-width: 540px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .bb-container {
+                max-width: 720px;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .bb-container {
+                max-width: 960px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .bb-container {
+                max-width: 1140px;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .bb-container {
+                max-width: 1320px;
+            }
+        }
+
+        /* padding khusus HP & tablet */
+        @media (max-width: 992px) {
+            .bb-container {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+        }
+
+        /* container utama konten riwayat */
+        .container {
+            max-width: 1140px;
+            margin: 24px auto 40px;
             padding: 0 16px;
         }
 
-        @media (min-width:576px) {
-            .bb-container {
-                max-width: 540px
-            }
-        }
-
-        @media (min-width:768px) {
-            .bb-container {
-                max-width: 720px
-            }
-        }
-
-        @media (min-width:992px) {
-            .bb-container {
-                max-width: 960px
-            }
-        }
-
-        @media (min-width:1200px) {
-            .bb-container {
-                max-width: 1140px
-            }
-        }
-
-        @media (min-width:1400px) {
-            .bb-container {
-                max-width: 1320px
-            }
-        }
-
-        /* === HEADER (match pemesanan) === */
+        /* ===== Header ===== */
         .bb-header {
             position: sticky;
             top: 0;
@@ -85,7 +109,6 @@
             font-size: 1.5rem;
         }
 
-        /* sama seperti pemesanan sekarang */
         .bb-header__back {
             position: absolute;
             left: 16px;
@@ -95,13 +118,13 @@
             border: 0;
             cursor: pointer;
             background: rgba(255, 255, 255, .15);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
         }
 
-        /* === TABS (di bawah header, sticky) === */
+        /* ===== Tabs Status ===== */
         .tabs-bar {
             position: sticky;
             top: var(--hdr);
@@ -130,34 +153,7 @@
             border-bottom: 2px solid #7B0D1E;
         }
 
-        /* === CONTENT WIDTH & SPACING === */
-        .container {
-            max-width: 1140px;
-            margin: 24px auto 40px;
-            padding: 0 16px;
-        }
-
-        /* dulu 980 + margin-top besar; sekarang seragam */
-        .alert {
-            max-width: 1140px;
-            margin: 16px auto 8px;
-            padding: 10px 12px;
-            border-radius: 8px;
-        }
-
-        .alert-success {
-            background: #eaf8ec;
-            color: #1d7a3d;
-            border: 1px solid #cbeed3;
-        }
-
-        .alert-danger {
-            background: #fdeaea;
-            color: #9b1c1c;
-            border: 1px solid #f5c2c2;
-        }
-
-        /* === KARTU DST (tetap) === */
+        /* ===== Kartu Riwayat ===== */
         .order-card {
             background: #fff;
             margin: 1rem 0;
@@ -252,7 +248,11 @@
         .buttons {
             display: flex;
             gap: 8px;
+            /* Jarak antar tombol */
             flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: center;
+            /* ⬅️ baru, supaya sejajar */
         }
 
         .buttons button {
@@ -260,6 +260,45 @@
             padding: 8px 16px;
             cursor: pointer;
             font-weight: 500;
+        }
+
+        /* tombol teks kecil: Nilai / Lihat Penilaian */
+        .btn-text {
+            background: transparent;
+            border: none;
+            color: #7B0D1E;
+            font-size: 13px;
+            padding: 4px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 0;
+            /* ⬅️ pastikan tidak ada jarak tambahan */
+            padding-left: 0;
+            cursor: pointer;
+        }
+
+        .btn-text .bi {
+            font-size: 15px;
+        }
+
+        /* ikon WA bulat kecil */
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid #ccc;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #25D366;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+        }
+
+        .btn-icon .bi {
+            font-size: 18px;
         }
 
         .btn-primary {
@@ -273,10 +312,21 @@
         }
 
         .btn-secondary {
-            background: #fff;
-            border: 1.5px solid #ccc;
-            color: #444;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+            background: #ffffff;
+            border: 1px solid #d5d5d5;
+            color: #555;
+            padding: 5px 14px;
+            /* tinggi lebih kecil */
+            font-size: 12px;
+            /* font kecil */
+            border-radius: 8px;
+            /* pill */
+            box-shadow: none;
+            /* hilangin bayangan */
+            line-height: 1.3;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-secondary:hover {
@@ -284,7 +334,11 @@
             color: #7B0D1E;
         }
 
-        /* modal (tetap) */
+        .order-actions-right .btn-secondary+.btn-secondary {
+            margin-left: 6px;
+        }
+
+        /* ===== Modal Detail Pesanan ===== */
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -403,21 +457,16 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: scale(.98)
+                transform: scale(.98);
             }
 
             to {
                 opacity: 1;
-                transform: scale(1)
+                transform: scale(1);
             }
         }
 
-        .muted {
-            color: #888;
-            font-size: 12px;
-        }
-
-        /* ==== Popup Ulasan ==== */
+        /* ===== Popup Ulasan ===== */
         .rv-backdrop {
             position: fixed;
             inset: 0;
@@ -434,7 +483,8 @@
             overflow: auto;
             background: #fff;
             border-radius: 16px;
-            padding: 20px 22px;
+            padding: 20px 24px 24px;
+            /* 🔁 tambahin padding kanan & bawah sedikit */
             box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
         }
 
@@ -442,14 +492,14 @@
             font-size: 20px;
             font-weight: 700;
             margin: 0 0 14px;
-            color: #1a1a1a
+            color: #1a1a1a;
         }
 
         .rv-head {
             display: flex;
             align-items: center;
             gap: 14px;
-            margin-bottom: 12px
+            margin-bottom: 12px;
         }
 
         .rv-head img {
@@ -457,72 +507,300 @@
             height: 84px;
             object-fit: cover;
             border-radius: 12px;
-            background: #fafafa
+            background: #fafafa;
         }
 
         .rv-name {
             font-weight: 600;
-            font-size: 16px
+            font-size: 16px;
         }
 
         .rv-label {
             font-size: 14px;
             color: #333;
-            margin: 12px 0 8px
+            margin: 12px 0 8px;
         }
 
         .rv-stars {
             display: flex;
             gap: 8px;
             font-size: 22px;
-            color: #F2C94C
+            color: #F2C94C;
         }
 
         .rv-star {
-            cursor: pointer
+            cursor: pointer;
         }
 
         .rv-star.active {
-            color: #F2C94C
+            color: #F2C94C;
         }
 
         .rv-textarea {
             width: 100%;
+            max-width: 100%;
+            /* 🔁 cegah lebih lebar dari kartu */
+            box-sizing: border-box;
+            /* 🔁 pastikan termasuk padding */
             min-height: 120px;
             resize: vertical;
             border: 1px solid #eee;
             border-radius: 10px;
             padding: 12px;
-            font-size: 14px
+            font-size: 14px;
+            margin-top: 4px;
+            /* 🔁 beri jarak kecil dari label */
+            margin-bottom: 10px;
+            /* 🔁 jarak sebelum tombol, biar nggak nempel */
         }
 
         .rv-actions {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
-            margin-top: 16px
+            margin-top: 16px;
         }
 
         .rv-btn {
             padding: 10px 18px;
             border-radius: 10px;
             cursor: pointer;
-            border: 1px solid transparent
+            border: 1px solid transparent;
         }
 
         .rv-btn.rv-ghost {
             background: #fff;
             border-color: #ddd;
-            color: #333
+            color: #333;
         }
 
         .rv-btn.rv-primary {
             background: #7B0D1E;
-            color: #fff
+            color: #fff;
         }
 
         .rv-btn.rv-primary:hover {
-            background: #5d0a17
+            background: #5d0a17;
+        }
+
+        /* ===== Aksi di kartu (layout baru) ===== */
+        .order-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .order-actions-left,
+        .order-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* tombol teks kecil: Nilai / Lihat Penilaian */
+        .btn-text {
+            background: transparent;
+            border: none;
+            color: #7B0D1E;
+            font-size: 13px;
+            padding: 4px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .btn-text .bi {
+            font-size: 15px;
+        }
+
+        /* ikon WA bulat kecil */
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid #ccc;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #25D366;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+        }
+
+        .btn-icon .bi {
+            font-size: 18px;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .bb-header__inner {
+                padding: 0 18px;
+            }
+
+            .bb-header__title {
+                font-size: 1.25rem;
+            }
+
+            .tabs {
+                padding: 8px 18px;
+                overflow-x: auto;
+                justify-content: flex-start;
+                gap: 12px;
+            }
+
+            .tabs::after {
+                content: "";
+                flex: 0 0 24px;
+            }
+
+            .tabs button {
+                flex: 0 0 auto;
+                font-size: 13px;
+                padding-bottom: 4px;
+            }
+
+            .container {
+                margin: 16px auto 24px;
+                padding: 0 18px;
+            }
+
+            .order-card {
+                padding: 12px 14px;
+            }
+
+            .product {
+                align-items: flex-start;
+            }
+
+            .product img {
+                width: 70px;
+                height: 70px;
+                margin-right: 10px;
+            }
+
+            .price {
+                font-size: 12px;
+            }
+
+            .total {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0;
+            }
+
+            .total strong {
+                font-size: 15px;
+            }
+
+            .buttons {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                gap: 6px;
+            }
+
+            .buttons button {
+                flex: 0 0 auto;
+                min-width: 110px;
+                max-width: 150px;
+                padding: 6px 10px;
+                font-size: 12px;
+                text-align: center;
+            }
+
+
+            /* ===== Modal detail pesanan di HP ===== */
+            .modal-backdrop {
+                align-items: center;
+                justify-content: center;
+                padding: 20px 14px;
+            }
+
+            .modal-card {
+                width: 100%;
+                max-width: 480px;
+                border-radius: 12px;
+                padding: 16px 14px;
+                max-height: calc(100vh - 80px);
+                overflow-y: auto;
+            }
+
+            .order-header-popup {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .modal-product {
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .modal-product img {
+                width: 72px;
+                height: 72px;
+            }
+
+            /* ===== Popup ULASAN di HP ===== */
+            .rv-backdrop {
+                align-items: center;
+                justify-content: center;
+                padding: 20px 14px;
+                /* ada jarak atas–bawah */
+            }
+
+            .rv-card {
+                width: 100%;
+                max-width: 480px;
+                /* lebar nyaman di HP */
+                border-radius: 12px;
+                padding: 16px 14px;
+                max-height: calc(100vh - 80px);
+                /* tidak kepotong, bisa discroll */
+                overflow-y: auto;
+            }
+
+            .rv-head img {
+                width: 64px;
+                height: 64px;
+                /* gambar produk sedikit diperkecil */
+            }
+
+            .rv-title {
+                font-size: 18px;
+            }
+
+            .order-actions {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            .order-actions-left,
+            .order-actions-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .order-actions-right {
+                justify-content: flex-end;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .buttons {
+                justify-content: flex-start;
+            }
+
+            .buttons button {
+                min-width: 100px;
+                max-width: 130px;
+            }
         }
     </style>
 
@@ -542,16 +820,14 @@
     <!-- TABS (sticky di bawah header, konten dibatasi container) -->
     <div class="tabs-bar" role="tablist" aria-label="Filter status">
         <div class="bb-container tabs">
-            <button type="button" class="active" data-filter="all">Semua</button>
-            <button type="button" data-filter="Belum Bayar">Belum Bayar</button>
-            <button type="button" data-filter="Sedang Proses">Sedang Proses</button>
-            <button type="button" data-filter="Disiapkan">Disiapkan</button>
+            <!-- default aktif: Belum Bayar -->
+            <button type="button" class="active" data-filter="Belum Bayar">Belum Bayar</button>
+            <button type="button" data-filter="Diproses">Diproses</button>
             <button type="button" data-filter="Disewa">Disewa</button>
             <button type="button" data-filter="Selesai">Selesai</button>
             <button type="button" data-filter="Dibatalkan">Dibatalkan</button>
         </div>
     </div>
-
 
     <div class="container" id="ordersContainer">
         @forelse ($pemesanan as $order)
@@ -616,9 +892,6 @@
                 <span>Total {{ $totalQty }} Produk</span>
                 <strong>Rp{{ number_format($totalDisplay,0,',','.') }}</strong>
             </div>
-
-            <div class="muted">NO. PESANAN: {{ $order->no_pesanan }}</div>
-            <div class="muted">Metode Pembayaran: {{ $metodeDisplay }}</div>
             @php
             $firstDetail = $order->details->first();
             $reviewModalId = null;
@@ -632,28 +905,38 @@
             }
             @endphp
 
-            <div class="buttons" style="margin-top:10px;">
-                @if ($status === 'Selesai' && $firstDetail)
-                @if (empty($firstDetail->ulasan))
-                <button class="btn-primary" type="button" data-open-review="{{ $reviewModalId }}">
-                    Nilai
-                </button>
-                @else
-                <button class="btn-secondary" type="button" data-open-view-review="{{ $firstDetail->id_detail }}">
-                    Lihat Penilaian
-                </button>
-                @endif
-                @endif
+            <div class="order-actions">
+                {{-- KIRI: Nilai / Lihat Penilaian --}}
+                <div class="order-actions-left">
+                    @if ($status === 'Selesai' && $firstDetail)
+                    @if (empty($firstDetail->ulasan))
+                    <button class="btn-text" type="button" data-open-review="{{ $reviewModalId }}">
+                        <i class="bi bi-star"></i>
+                        <span>Nilai</span>
+                    </button>
+                    @else
+                    <button class="btn-text" type="button" data-open-view-review="{{ $firstDetail->id_detail }}">
+                        <i class="bi bi-star-fill"></i>
+                        <span>Lihat Penilaian</span>
+                    </button>
+                    @endif
+                    @endif
+                </div>
 
-                <button class="btn-secondary" onclick="hubungiKami()">Hubungi Kami</button>
+                {{-- KANAN: Pesan Lagi + Lihat Rincian --}}
+                <div class="order-actions-right">
+                    @if (in_array($status, ['Selesai', 'Dibatalkan']))
+                    <button class="btn-secondary" type="button" onclick="pesanLagi('{{ route('menu') }}')">
+                        Pesan Lagi
+                    </button>
+                    @endif
 
-                {{-- TAMPILKAN HANYA JIKA SELESAI atau DIBATALKAN --}}
-                @if (in_array($status, ['Selesai', 'Dibatalkan']))
-                <button class="btn-secondary" onclick="pesanLagi('{{ route('menu') }}')">Pesan Lagi</button>
-                @endif
-
-                <button class="btn-secondary" onclick="openDetailModal('{{ $modalId }}')">Lihat Rincian</button>
+                    <button class="btn-secondary" type="button" onclick="openDetailModal('{{ $modalId }}')">
+                        Lihat Rincian
+                    </button>
+                </div>
             </div>
+
 
             @if ($status === 'Selesai' && $firstDetail && empty($firstDetail->ulasan))
             <div id="{{ $reviewModalId }}" class="rv-backdrop" aria-hidden="true">
@@ -785,15 +1068,8 @@
 
                 <div class="modal-actions">
                     <button class="modal-btn primary" onclick="closeAllModals()">Tutup</button>
-
-                    {{-- TAMPILKAN HANYA JIKA SELESAI atau DIBATALKAN --}}
-                    @if (in_array($status, ['Selesai', 'Dibatalkan']))
-                    <button class="modal-btn ghost" onclick="pesanLagi('{{ route('menu') }}')">Pesan Lagi</button>
-                    @endif
-
                     <button class="modal-btn ghost" onclick="hubungiKami()">Hubungi Kami</button>
                 </div>
-
             </div>
         </div>
         @empty
@@ -817,10 +1093,25 @@
             btn.classList.add('active');
         }
 
+        // value = label tab (Belum Bayar, Diproses, dst.)
         function applyFilter(value) {
             cards.forEach(c => {
                 const st = (c.getAttribute('data-status') || '').trim();
-                const show = (value === 'all') ? true : (st === value);
+                let show = false;
+
+                if (!value) {
+                    // fallback: tampilkan semua
+                    show = true;
+                } else if (value === 'Diproses') {
+                    show = (
+                        st === 'Diproses' ||
+                        st === 'Siap Diambil'
+                    );
+                } else {
+                    // tab lain: cocokkan langsung
+                    show = (st === value);
+                }
+
                 c.style.display = show ? '' : 'none';
             });
         }
@@ -831,6 +1122,12 @@
                 applyFilter(btn.dataset.filter);
             });
         });
+
+        // apply filter awal sesuai tab yang aktif (Belum Bayar)
+        const initialActive = document.querySelector('.tabs button.active');
+        if (initialActive) {
+            applyFilter(initialActive.dataset.filter);
+        }
 
         // ==== Modal helpers ====
         function openDetailModal(id) {

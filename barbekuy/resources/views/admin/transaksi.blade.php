@@ -192,12 +192,12 @@
       color: #b71c1c;
     }
 
-    .status-select.st-sedang-proses {
+    .status-select.st-diproses {
       background: #fff7cc;
       color: #a77f00;
     }
 
-    .status-select.st-disiapkan {
+    .status-select.st-siap-diambil {
       background: #d2f7d0;
       color: #2e7d32;
     }
@@ -310,13 +310,12 @@
       --dot: #e53935;
     }
 
-    /* merah */
-    .status-item.st-sedang-proses {
+    .status-item.st-diproses {
       --dot: #f5a524;
     }
 
     /* oranye */
-    .status-item.st-disiapkan {
+    .status-item.st-siap-diambil {
       --dot: #0ea5e9;
     }
 
@@ -381,13 +380,13 @@
       border-color: #f3b5b2;
     }
 
-    .status-pill.st-sedang-proses {
+    .status-pill.st-diproses {
       background: #fff3bf;
       color: #a77f00;
       border-color: #ffe7a0;
     }
 
-    .status-pill.st-disiapkan {
+    .status-pill.st-siap-diambil {
       background: #e0f2ff;
       color: #0b6aa1;
       border-color: #cfe8ff;
@@ -636,8 +635,8 @@
   // Map status -> kelas badge (untuk tampilan)
   $statusClass = [
   'Belum Bayar' => 'belum-bayar',
-  'Sedang Proses' => 'sedang-proses',
-  'Disiapkan' => 'disiapkan',
+  'Diproses' => 'diproses',
+  'Siap Diambil' => 'siap-diambil',
   'Disewa' => 'disewa',
   'Selesai' => 'selesai',
   'Dibatalkan' => 'dibatalkan',
@@ -941,10 +940,10 @@
       switch ((v || '').toLowerCase()) {
         case 'belum bayar':
           return 'st-belum-bayar';
-        case 'sedang proses':
-          return 'st-sedang-proses';
-        case 'disiapkan':
-          return 'st-disiapkan';
+        case 'diproses':
+          return 'st-diproses';
+        case 'siap diambil':
+          return 'st-siap-diambil';
         case 'disewa':
           return 'st-disewa';
         case 'selesai':

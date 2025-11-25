@@ -1,22 +1,20 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Session;
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BerandaController;
-use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\MidtransController;
-use App\Http\Controllers\PemesananController;
-use App\Http\Controllers\TransaksiController;
-use App\Http\Controllers\UlasanController;
 use App\Http\Controllers\NotifikasiController;
-
-// ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
+use App\Http\Controllers\PemesananController;
 use App\Http\Controllers\PengaturanController as AdminPengaturanController;
 use App\Http\Controllers\PengaturanUserController;
+use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\UlasanController;
+use Illuminate\Http\Request;
+// ⚙️ Pengaturan (ADMIN lama = PengaturanController, USER = PengaturanUserController)
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +28,7 @@ Route::get('/', function () {
             ? redirect()->route('admin.beranda')
             : redirect()->route('beranda');
     }
+
     return redirect()->route('login');
 });
 
@@ -60,7 +59,6 @@ Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])
     ->name('auth.google.callback');
 
-
 /*
 |--------------------------------------------------------------------------
 | 🌐 Halaman Umum
@@ -85,9 +83,10 @@ Route::middleware(['auth'])->get('/keranjang/count', function () {
     $count = 0;
     if (is_array($keranjang)) {
         foreach ($keranjang as $row) {
-            $count += (int)($row['jumlah'] ?? 1);
+            $count += (int) ($row['jumlah'] ?? 1);
         }
     }
+
     return response()->json(['count' => $count]);
 })->name('keranjang.count');
 
@@ -100,7 +99,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::delete('/keranjang/hapus/{key}', [KeranjangController::class, 'hapusByKey'])->name('keranjang.hapusByKey');
 
     Route::get('/pemesanan/{id}', [PemesananController::class, 'show'])->name('pemesanan.show');
-    Route::post('/pemesanan',      [PemesananController::class, 'store'])->name('pemesanan.store');
+    Route::post('/pemesanan', [PemesananController::class, 'store'])->name('pemesanan.store');
     Route::post('/pemesanan/confirm', [PemesananController::class, 'confirm'])
         ->name('pemesanan.confirm');
     // 💳 Multi-checkout (banyak produk sekaligus)
@@ -123,7 +122,6 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         return redirect()->route('riwayat.semua');
     })->name('pemesanan.riwayat');
 
-
     Route::get('/ulasan', [UlasanController::class, 'index'])->name('ulasan.index');
     Route::post('/ulasan', [UlasanController::class, 'store'])->name('ulasan.store');
 });
@@ -132,8 +130,9 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/chat', function (Request $request) {
         $messages = $request->session()->get('chat_messages', []);
+
         return view('chat', [
-            'messages'     => $messages,
+            'messages' => $messages,
             'customerName' => auth()->user()->name,
         ]);
     })->name('chat.index');
@@ -144,28 +143,30 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         $messages = $request->session()->get('chat_messages', []);
         $messages[] = [
             'sender' => 'customer',
-            'time'   => now()->format('H:i'),
-            'body'   => $data['body'],
+            'time' => now()->format('H:i'),
+            'body' => $data['body'],
         ];
         $messages[] = [
             'sender' => 'admin',
-            'time'   => now()->format('H:i'),
-            'body'   => 'Baik kak, pesanan akan kami proses ya 🙏',
+            'time' => now()->format('H:i'),
+            'body' => 'Baik kak, pesanan akan kami proses ya 🙏',
         ];
 
         $request->session()->put('chat_messages', $messages);
+
         return redirect()->route('chat.index');
     })->name('chat.send');
 
     Route::get('/chat/reset', function (Request $request) {
         $request->session()->forget('chat_messages');
+
         return redirect()->route('chat.index')->with('status', 'Chat telah direset.');
     })->name('chat.reset');
 });
 
 /*
 |--------------------------------------------------------------------------
-| ⚙️ Settings USER 
+| ⚙️ Settings USER
 |--------------------------------------------------------------------------
 */
 
@@ -176,7 +177,6 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/pengaturan/password', [PengaturanUserController::class, 'updatePassword'])->name('pengaturan.password.update');
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | 🧑‍💻 Area Admin
@@ -184,7 +184,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/beranda', [BerandaController::class, 'admin'])->name('admin.beranda');
-    
+
     Route::get('/transaksi', [TransaksiController::class, 'index'])
         ->name('admin.transaksi');
     Route::patch('/transaksi/{pemesanan}/status', [TransaksiController::class, 'updateStatus'])
@@ -200,7 +200,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/notifikasi/read-all', [NotifikasiController::class, 'markAllRead'])->name('admin.notifikasi.readAll');
     Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy'])->name('admin.notifikasi.destroy');
     Route::delete('/notifikasi', [NotifikasiController::class, 'bulkDestroy'])->name('admin.notifikasi.bulkDestroy');
-    
+
     Route::view('/pembayaran', 'admin.pembayaran')->name('admin.pembayaran');
     Route::view('/pesan', 'admin.pesan')->name('admin.pesan');
 
@@ -209,9 +209,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
     // ⚙️ SETTINGS ADMIN → admin.settings.*
     Route::prefix('settings')->as('admin.settings.')->group(function () {
-        Route::post('/profile',  [AdminPengaturanController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile', [AdminPengaturanController::class, 'updateProfile'])->name('profile.update');
         Route::post('/password', [AdminPengaturanController::class, 'updatePassword'])->name('password.update');
-        Route::post('/notif',    [AdminPengaturanController::class, 'updateNotif'])->name('notif.update');
+        Route::post('/notif', [AdminPengaturanController::class, 'updateNotif'])->name('notif.update');
 
         // (Opsional) kalau view admin kamu butuh verifikasi
         // Route::post('/verify',   [AdminPengaturanController::class, 'verify'])->name('verify');

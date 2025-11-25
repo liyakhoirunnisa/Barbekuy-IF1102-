@@ -13,17 +13,17 @@ class PengaturanController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'first_name'  => ['nullable', 'string', 'max:100'],
-            'last_name'   => ['nullable', 'string', 'max:100'],
-            'email'       => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user->id)],
-            'phone'       => ['nullable', 'string', 'max:25'],
-            'gender'      => ['nullable', Rule::in(['L', 'P'])],
-            'address'     => ['nullable', 'string', 'max:2000'],
-            'avatar'      => ['nullable', 'image', 'max:2048'], // file input, bukan path
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'email' => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:25'],
+            'gender' => ['nullable', Rule::in(['L', 'P'])],
+            'address' => ['nullable', 'string', 'max:2000'],
+            'avatar' => ['nullable', 'image', 'max:2048'], // file input, bukan path
         ]);
 
         // Gabungkan first_name + last_name -> name (opsional)
-        $displayName = trim(($validated['first_name'] ?? '') . ' ' . ($validated['last_name'] ?? ''));
+        $displayName = trim(($validated['first_name'] ?? '').' '.($validated['last_name'] ?? ''));
         if ($displayName !== '') {
             $validated['name'] = $displayName;
         }
@@ -47,7 +47,7 @@ class PengaturanController extends Controller
 
         $request->validate([
             'old_password' => ['required'],
-            'password'     => ['required', 'min:6', 'confirmed'],
+            'password' => ['required', 'min:6', 'confirmed'],
         ]);
 
         if (! Hash::check($request->old_password, $user->password)) {
@@ -67,7 +67,7 @@ class PengaturanController extends Controller
         $user = $request->user();
 
         $user->update([
-            'notif_email'   => $request->boolean('notif_email'),
+            'notif_email' => $request->boolean('notif_email'),
             'notif_payment' => $request->boolean('notif_payment'),
         ]);
 
