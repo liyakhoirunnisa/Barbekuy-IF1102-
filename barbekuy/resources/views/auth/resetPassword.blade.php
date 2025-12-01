@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lupa Kata Sandi - Barbekuy</title>
+    <title>Reset Kata Sandi - Barbekuy</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet"
@@ -16,14 +16,14 @@
             background-color: #fff;
         }
 
-        .container-forgot {
+        .container-reset {
             display: flex;
             height: 100vh;
             align-items: center;
             justify-content: center;
         }
 
-        .card-forgot {
+        .card-reset {
             display: flex;
             width: 900px;
             border-radius: 15px;
@@ -32,19 +32,18 @@
             background-color: #fff;
         }
 
-        .forgot-left {
+        .reset-left {
             flex: 1;
             padding: 40px;
         }
 
-        .forgot-left p {
-            text-align: justify;
-        }
-
-
-        .forgot-left h2 {
+        .reset-left h2 {
             font-weight: 600;
             margin-bottom: 15px;
+        }
+
+        .reset-left p {
+            text-align: justify;
         }
 
         .btn-submit {
@@ -61,69 +60,55 @@
             background-color: #8e1e2a;
         }
 
-        .forgot-right {
+        .reset-right {
             flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #fff;
-            /* opsional */
-            padding: 20px;
+            background-image: url('{{ asset("images/loginpage.png") }}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
-
-        .forgot-img {
-            width: 360px;
-            /* bisa kamu ubah sendiri */
-            height: 370px;
-            /* bisa kamu ubah sendiri */
-            object-fit: cover;
-            /* buat gambar tetap proporsional */
-            border-radius: 14px;
-        }
-
 
         .logo {
             width: 120px;
             margin-bottom: 20px;
         }
 
-        /* Tombol kembali ala halaman login */
-        .btn-back-forgot {
+        /* ==== Tombol kembali ala login ==== */
+        .btn-back-reset {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             color: #751A25;
             text-decoration: none;
             font-weight: 500;
             font-size: 0.95rem;
             margin-bottom: 20px;
-            transition: color .2s ease;
+            transition: color 0.25s ease;
         }
 
-        .btn-back-forgot i {
-            font-size: 1rem;
+        .btn-back-reset i {
+            font-size: 1.05rem;
         }
 
-        .btn-back-forgot:hover {
+        .btn-back-reset:hover {
             color: #a00000;
             text-decoration: none;
         }
 
         @media (max-width: 768px) {
-            .card-forgot {
+            .card-reset {
                 flex-direction: column;
                 width: 95%;
                 height: auto;
             }
 
-            .forgot-right {
+            .reset-right {
                 height: 200px;
             }
         }
 
         .link-back {
             color: #800000 !important;
-            /* Merah Barbekuy */
             font-weight: 500;
             text-decoration: none;
             transition: color 0.3s ease;
@@ -131,48 +116,72 @@
 
         .link-back:hover {
             color: #a00000 !important;
-            /* Lebih terang saat hover */
             text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
-    <div class="container-forgot">
-        <div class="card-forgot">
-            <div class="forgot-left">
+    <div class="container-reset">
+        <div class="card-reset">
+            <div class="reset-left">
                 <div class="logo-container">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo Barbekuy" class="logo">
                 </div>
 
-                <a href="{{ route('login') }}" class="btn-back-forgot mb-3">
+                <a href="{{ route('login') }}" class="btn-back-reset">
                     <i class="bi bi-chevron-left"></i>
                     <span>Kembali</span>
                 </a>
 
-                <h2>Lupa kata sandi Anda?</h2>
-                <p>Jangan khawatir, ini terjadi pada kita semua. Masukkan email anda dibawah ini untuk memulihkan kata sandi anda.</p>
+                <h2>Buat kata sandi baru</h2>
+                <p>Kata sandi Anda sebelumnya telah diatur ulang. Silahkan buat kata sandi baru untuk akun Anda.</p>
 
-                @if (session('status'))
-                <div class="alert alert-success">{{ session('status') }}</div>
+                {{-- Error validation --}}
+                @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
                 @endif
 
-                <form method="POST" action="{{ route('password.email') }}">
+                <form method="POST" action="{{ route('password.update') }}">
                     @csrf
+
+                    {{-- token reset wajib --}}
+                    <input type="hidden" name="token" value="{{ $token }}">
+
+                    {{-- Email tetap dikirim tapi tidak ditampilkan --}}
+                    <input type="hidden" name="email" value="{{ $email ?? old('email') }}">
+
                     <div class="mb-3">
-                        <label>Email</label>
-                        <input type="email" class="form-control" name="email" placeholder="Masukkan email" required>
-                        @error('email')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
+                        <label class="form-label">Kata sandi baru</label>
+                        <input type="password"
+                            class="form-control"
+                            name="password"
+                            placeholder="Minimal 8 karakter"
+                            required
+                            autocomplete="new-password">
                     </div>
-                    <button type="submit" class="btn-submit">Kirim</button>
+
+                    <div class="mb-4">
+                        <label class="form-label">Konfirmasi kata sandi baru</label>
+                        <input type="password"
+                            class="form-control"
+                            name="password_confirmation"
+                            placeholder="Ulangi kata sandi"
+                            required
+                            autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Simpan kata sandi</button>
                 </form>
             </div>
 
-            <div class="forgot-right">
-                <img src="{{ asset('images/loginpage.png') }}" alt="Forgot Password Image" class="forgot-img">
-            </div>
+            <div class="reset-right"></div>
         </div>
     </div>
 </body>

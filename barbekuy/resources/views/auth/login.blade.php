@@ -9,6 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
+    {{-- Google Font --}}
+    <!-- Import font Poppins dari Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -73,17 +77,19 @@
         }
 
         .login-right {
-            flex: 1;
-            height: 768px;
-            align-self: center;
-            margin-right: 40px;
-            margin-left: 20px;
-            border-radius: 15px;
-            background-image: url('{{ asset("images/loginpage.png") }}');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.login-img {
+    width: 360px;  /* bebas kamu ganti */
+    height: 460px; /* bebas kamu ganti */
+    object-fit: cover;
+    border-radius: 14px;
+}
 
         .google-btn {
             border: 1px solid #ddd;
@@ -148,6 +154,28 @@
             width: 120px;
         }
 
+        /* ==== Tombol kembali ala header ulasan ==== */
+        .btn-back-login {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #751A25;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            transition: color .2s ease;
+        }
+
+        .btn-back-login i {
+            font-size: 1rem;
+        }
+
+        .btn-back-login:hover {
+            color: #a00000;
+            text-decoration: none;
+        }
+
         @media (max-width: 768px) {
             body {
                 align-items: flex-start;
@@ -178,7 +206,10 @@
                     <img src="{{ asset('images/logo.png') }}" alt="Logo Barbekuy" class="logo">
                 </div>
 
-                <a href="{{ url('/') }}" class="d-block mb-3">&larr; Kembali ke beranda</a>
+                <a href="{{ url('/') }}" class="btn-back-login">
+                    <i class="bi bi-chevron-left"></i>
+                    <span>Kembali ke beranda</span>
+                </a>
 
                 <h2>Masuk</h2>
                 <p>Masuk untuk mengakses akun anda</p>
@@ -211,7 +242,7 @@
                                 {{ request()->cookie('remember_email') ? 'checked' : '' }}>
                             <label class="form-check-label" for="remember">Ingat saya</label>
                         </div>
-                        <a href="#">Lupa kata sandi?</a>
+                        <a href="{{ route('password.request') }}">Lupa kata sandi?</a>
                     </div>
 
                     <button type="submit" class="btn-login">Masuk</button>
@@ -229,7 +260,9 @@
                 </div>
             </div>
 
-            <div class="login-right"></div>
+            <div class="login-right">
+                <img src="{{ asset('images/loginpage.png') }}" alt="Login Image" class="login-img">
+            </div>
         </div>
     </div>
 </body>

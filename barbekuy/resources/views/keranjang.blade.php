@@ -6,12 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Supaya responsif di perangkat mobile -->
   <title>Keranjang | Barbekuy</title> <!-- Judul tab browser -->
 
-  {{-- Bootstrap & Icons --}} <!-- Komentar Blade: bagian untuk CSS Bootstrap dan icon -->
+  {{-- Bootstrap & Icons --}}
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Import CSS Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"> <!-- Import Bootstrap Icons -->
 
-  {{-- Google Font --}} <!-- Komentar Blade: bagian untuk font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"> <!-- Import font Poppins dari Google Fonts -->
+  {{-- Google Font --}}
+  <!-- Import font Poppins dari Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
     /* Mulai CSS internal */
@@ -39,7 +40,7 @@
       /* Hilangkan scroll horizontal */
     }
 
-    /* Navbar sama seperti halaman lain */
+    /* Navbar*/
     .navbar {
       background-color: #fff;
       /* Navbar putih */
@@ -60,8 +61,8 @@
     }
 
     /* =======================
-           KERANJANG – MOBILE FIRST
-           ======================= */
+    KERANJANG – MOBILE FIRST
+    ======================= */
 
     .cart-container {
       padding: 32px 0 48px 0;
@@ -207,6 +208,8 @@
       /* Teks status kecil (misal "Belum disimpan") */
       margin-top: 2px;
       /* Jarak dari elemen di atas */
+      display: none;
+      /* Default disembunyikan, nanti ditampilkan via JS */
     }
 
     /* Baris qty + harga (HP: harga di bawah qty) */
@@ -421,6 +424,35 @@
       /* Warna ikon delete */
       line-height: 1;
       /* Tinggi baris normal */
+    }
+
+    /* =========================
+       Tambahan style pindahan dari inline
+       ========================= */
+
+    #totalSection {
+      display: none;
+      /* Bagian total disembunyikan awalnya, nanti dimunculkan via JS */
+    }
+
+    #bulkDeleteBtn {
+      display: none;
+      /* Tombol hapus massal disembunyikan awalnya, sama seperti inline sebelumnya */
+    }
+
+    #confirmDeleteModal .modal-content {
+      border-radius: 16px;
+      /* Samakan radius modal dengan inline style sebelumnya */
+    }
+
+    #confirmDeleteBtn {
+      background-color: #751A25;
+      /* Warna background tombol hapus di modal, sebelumnya inline */
+    }
+
+    #bulkDeleteBtn i {
+      font-size: 2rem;
+      /* Ukuran ikon trash default di desktop (sebelum override di media query) */
     }
 
     /* =========================
@@ -734,7 +766,7 @@
 
       #bulkDeleteBtn i {
         font-size: 1rem !important;
-        /* Ukuran ikon hapus */
+        /* Ukuran ikon hapus di HP (override 2rem) */
       }
 
       .bagian-total .btn-primary-custom {
@@ -759,20 +791,24 @@
     {{-- Loop setiap item keranjang; kalau kosong nanti masuk ke @empty --}}
     @forelse ($keranjang as $key => $barang)
 
-    @php
-    // Mulai blok PHP untuk hitung data dinamis tiap item keranjang
-    $produk = \App\Models\Produk::where('id_produk', $barang['produk_id'])->first(); // Ambil data produk dari database berdasarkan id_produk yang ada di keranjang
+
+    @php // Mulai blok PHP untuk hitung data tiap item keranjang
+    // Ambil data produk dari database berdasarkan id_produk yang ada di keranjang
+    $produk = \App\Models\Produk::where('id_produk', $barang['produk_id'])->first();
 
     $mulai = $barang['tanggal_mulai'] ?? null; //Ambil tanggal mulai sewa dari data keranjang (jika ada), kalau tidak ada nilainya null
-    $akhir = $barang['tanggal_pengembalian'] ?? null; // Ambil tanggal pengembalian sewa dari data keranjang (jika ada), kalau tidak ada nilainya null
+
+    // Ambil tanggal pengembalian sewa dari data keranjang (jika ada), kalau tidak ada nilainya null
+    $akhir = $barang['tanggal_pengembalian'] ?? null;
+
     $diffSec = 0; // Inisialisasi selisih waktu dalam detik
 
     if ($mulai && $akhir) { // Jika kedua tanggal (mulai & akhir) terisi
-    $diffSec = max(0, strtotime($akhir) - strtotime($mulai)); // Hitung selisih detik antara akhir dan mulai, pastikan minimal 0 (tidak negatif)
+    $diffSec = max(0, strtotime($akhir) - strtotime($mulai)); // Hitung selisih detik antara akhir dan mulai, pastikan minimal 0
     }
 
     $durasiAwal = max(1, (int) floor($diffSec / 86400)); // Konversi selisih detik ke jumlah hari (86400 detik = 1 hari), minimal 1 hari
-    $subtotalAwal = ($produk->harga ?? 0) * ($barang['jumlah'] ?? 1) * $durasiAwal; // Hitung subtotal: harga produk × jumlah sewa × durasi hari, dengan default 0/1 jika data tidak ada
+    $subtotalAwal = ($produk->harga ?? 0) * ($barang['jumlah'] ?? 1) * $durasiAwal; // Hitung subtotal dengan default 0/1 jika data tidak ada
     @endphp
 
     <div class="item-keranjang"
@@ -788,9 +824,10 @@
           <span class="nama-produk nama-mobile">{{ $produk->nama_produk }}</span> <!-- Nama produk tampil di HP -->
         </div>
 
-        <img src="{{ asset('storage/' . $produk->gambar) }}" <!-- Gambar produk dari storage -->
-        alt="{{ $produk->nama_produk }}" <!-- Alt text = nama produk -->
-        class="product-img"> <!-- Class untuk styling ukuran gambar -->
+        {{-- Gambar produk dari storage --}}
+        <img src="{{ asset('storage/' . $produk->gambar) }}"
+          alt="{{ $produk->nama_produk }}"
+          class="product-img">
       </div>
 
       {{-- BLOK KANAN: nama (desktop) + tanggal + qty + harga --}}
@@ -813,7 +850,7 @@
             value="{{ $barang['tanggal_pengembalian'] }}"
             name="tanggal_pengembalian">
 
-          <small class="status-simpan ms-2 text-muted" style="display:none;">Menyimpan…</small> <!-- Teks kecil untuk status "Menyimpan…" (ditampilkan via JS saat update tanggal) -->
+          <small class="status-simpan ms-2 text-muted">Menyimpan…</small> <!-- Teks kecil untuk status "Menyimpan…" (default hidden via CSS) -->
         </div>
 
         <div class="bottom-row"> <!-- Baris bawah: kontrol jumlah & subtotal harga -->
@@ -837,20 +874,19 @@
     {{-- Akhir loop @forelse --}}
 
     {{-- Bagian Total --}}
-    <div id="totalSection" class="bagian-total" style="display:none;">
+    <div id="totalSection" class="bagian-total">
       <!-- ✅ Select All -->
       <div class="form-check m-0 d-flex align-items-center gap-2"> <!-- Checkbox "Semua" + label sejajar -->
         <input type="checkbox" id="selectAll"> <!-- Checkbox untuk pilih semua item keranjang -->
-        <label class="form-check-label" for="selectAll" style="user-select:none;">Semua</label> <!-- Label "Semua" (nggak bisa di-blok teksnya) -->
+        <label class="form-check-label" for="selectAll" style="user-select:none;">Semua</label> <!-- Label "Semua" -->
       </div>
       <div class="d-flex align-items-center gap-3"> <!-- Kanan: total harga + tombol hapus + tombol pesan -->
         <span id="totalHarga">Rp0</span> <!-- Tempat menampilkan total harga semua item terpilih -->
 
         {{-- tombol hapus massal: hanya muncul saat ada item terpilih --}}
         <button id="bulkDeleteBtn" type="button"
-          class="btn btn-delete-custom px-1 py-1 d-inline-flex align-items-center"
-          style="display:none;">
-          <i class="bi bi-trash" style="font-size:2rem;"></i> <!-- Ikon trash besar untuk hapus massal -->
+          class="btn btn-delete-custom px-1 py-1 d-inline-flex align-items-center">
+          <i class="bi bi-trash"></i> <!-- Ikon trash besar untuk hapus massal (ukuran diatur via CSS) -->
         </button>
 
         <a href="#" id="checkoutBtn" class="btn btn-primary-custom px-4 py-2">Pesan</a> <!-- Tombol lanjut ke proses pesan/checkout -->
@@ -860,7 +896,7 @@
     <!-- 🗑️ Modal Konfirmasi Hapus -->
     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered"> <!-- Modal di tengah layar -->
-        <div class="modal-content border-0 shadow-sm rounded-4" style="border-radius:16px;">
+        <div class="modal-content border-0 shadow-sm rounded-4">
           <div class="modal-body text-center p-4"> <!-- Isi modal rata tengah -->
             <h5 class="fw-semibold text-danger mb-3" style="color:#751A25 !important;">
               Konfirmasi Hapus Produk <!-- Judul modal -->
@@ -873,16 +909,12 @@
               <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3"
                 data-bs-dismiss="modal">Batal</button> <!-- Tombol batal, menutup modal -->
               <button type="button" id="confirmDeleteBtn"
-                class="btn px-4 py-2 rounded-3 text-white"
-                style="background-color:#751A25;">Hapus</button> <!-- Tombol konfirmasi hapus (aksi di-handle JS) -->
+                class="btn px-4 py-2 rounded-3 text-white">Hapus</button> <!-- Tombol konfirmasi hapus (aksi di-handle JS) -->
             </div>
           </div>
         </div>
       </div>
     </div>
-
-
-
   </section> <!-- Akhir section cart-container -->
 
   {{-- Script --}}
@@ -980,6 +1012,37 @@
       };
     }
 
+    // === CEK STOK KE SERVER ===
+    async function cekStokItem(id, tanggalMulai, tanggalPengembalian, jumlah) {
+      const resp = await fetchJSON(
+        `{{ url('/produk') }}/${encodeURIComponent(id)}/stok-tersedia`, {
+          method: 'POST',
+          body: JSON.stringify({
+            tanggal_mulai: tanggalMulai,
+            tanggal_pengembalian: tanggalPengembalian,
+            jumlah: jumlah
+          })
+        }
+      );
+
+      if (!resp.ok || !resp.data) {
+        return {
+          ok: false,
+          bisa: false,
+          stokTersedia: null,
+          message: 'Gagal mengecek stok.'
+        };
+      }
+
+      const d = resp.data;
+      return {
+        ok: true,
+        bisa: d.bisa_dipesan !== false,
+        stokTersedia: d.stok_tersedia ?? null,
+        message: d.message
+      };
+    }
+
     async function updateQtyOnServer(item, id, jumlah, tanggalMulai, tanggalPengembalian) {
       const key = item.dataset.key; // Ambil key item dari atribut data-key
       const resp = await fetchJSON(`/keranjang/ubah/${encodeURIComponent(id)}`, { // Panggil endpoint update keranjang
@@ -1042,6 +1105,20 @@
     const debouncedTypeUpdate = debounce(async (item, id, jumlah) => { // Handler qty yang diketik manual (debounce)
       const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value; // Ambil tanggal mulai
       const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value; // Ambil tanggal kembali
+      const qtyInput = item.querySelector('.kontrol-jumlah input'); // Input qty untuk item ini
+
+      // 🧮 Cek stok dulu ke server
+      const stokInfo = await cekStokItem(id, tanggalMulai, tanggalPengembalian, jumlah);
+      if (!stokInfo.ok) {
+        alert(stokInfo.message || 'Gagal mengecek stok.');
+        return;
+      }
+      if (!stokInfo.bisa) {
+        const maxQty = stokInfo.stokTersedia ?? jumlah;
+        alert(stokInfo.message || `Stok tidak mencukupi. Maksimal ${maxQty} unit.`);
+        qtyInput.value = maxQty;
+        jumlah = maxQty;
+      }
 
       // Optimistic subtotal
       const harga = Number(item.dataset.harga || 0); // Harga satuan dari data attribute
@@ -1063,6 +1140,7 @@
       }
     }, 450);
 
+
     document.querySelectorAll('.item-keranjang').forEach(item => { // Untuk setiap item keranjang
       const id = item.dataset.id; // ID produk
       const btnMinus = item.querySelector('.kurang'); // Tombol minus
@@ -1073,11 +1151,26 @@
       qtyInput.value = clampQty(qtyInput.value); // Normalisasi nilai awal qty
 
       btnPlus.addEventListener('click', async () => { // Klik tombol +
-        const next = clampQty(qtyInput.value) + 1; // Tambah 1
-        qtyInput.value = next; // Tampilkan qty baru ke input
+        const current = clampQty(qtyInput.value); // Qty sekarang
+        const next = current + 1; // Qty setelah ditambah 1
 
         const tanggalMulai = item.querySelector('input[name="tanggal_mulai"]').value; // Ambil tgl mulai
         const tanggalPengembalian = item.querySelector('input[name="tanggal_pengembalian"]').value; // Ambil tgl kembali
+
+        // 🧮 Cek stok dulu sebelum benar-benar nambah
+        const stokInfo = await cekStokItem(id, tanggalMulai, tanggalPengembalian, next);
+        if (!stokInfo.ok) {
+          alert(stokInfo.message || 'Gagal mengecek stok.');
+          return;
+        }
+        if (!stokInfo.bisa) {
+          const maxQty = stokInfo.stokTersedia ?? current;
+          alert(stokInfo.message || `Stok tidak mencukupi. Maksimal ${maxQty} unit.`);
+          qtyInput.value = maxQty;
+          return;
+        }
+
+        qtyInput.value = next; // Tampilkan qty baru ke input
 
         const harga = Number(item.dataset.harga || 0); // Ambil harga dari dataset
         const durasi = hitungDurasiHari(tanggalMulai, tanggalPengembalian); // Hitung durasi hari
@@ -1213,7 +1306,8 @@
         data
       } = resp; // Ambil properti "data" dari respons fetchJSON (berisi hasil dari server)
       if (data && data.success) { // Kalau sukses dari server
-        const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc; // Gunakan subtotal dari server jika tersedia, kalau tidak pakai subtotal lokal
+        // Gunakan subtotal dari server jika tersedia, kalau tidak pakai subtotal lokal
+        const sub = (typeof data.subtotal === 'number') ? data.subtotal : subLoc;
         itemEl.querySelector('.harga-item').innerText = rupiah(sub); // Update subtotal final
         updateTotalSelected(); // Hitung ulang total keseluruhan pada bagian bawah halaman
         if (data.new_key) { // Kalau key diganti di server
@@ -1352,8 +1446,8 @@
 
       confirmBtn.addEventListener('click', async () => { // Saat user menekan "Hapus" di modal
         bsModal.hide(); // Tutup modal
-        const keys = selectedItems.map(cb => cb.value || cb.closest('.item-keranjang')?.dataset.key).filter(Boolean); // Ambil key dari checkbox / data-ke, Buang yang null/undefined 
-
+        // Ambil key dari checkbox / data-ke, Buang yang null/undefined
+        const keys = selectedItems.map(cb => cb.value || cb.closest('.item-keranjang')?.dataset.key).filter(Boolean);
         const resp = await fetchJSON(`/keranjang/hapus-banyak`, { // Panggil endpoint hapus banyak
           method: 'POST',
           body: JSON.stringify({
@@ -1428,6 +1522,76 @@
 
     // Init
     updateTotalSelected(); // Panggil sekali di awal untuk sync tampilan (total, tombol, dan "Pilih Semua")
+
+    // ===============================
+    // 🔍 FILTER SEARCH DI HALAMAN KERANJANG
+    // ===============================
+    document.addEventListener("DOMContentLoaded", () => {
+      // Hanya aktif di halaman /keranjang
+      if (!window.location.pathname.startsWith("/keranjang")) return;
+
+      // Ambil SEMUA form di navbar yang punya input name="q" (desktop + mobile)
+      const searchForms = document.querySelectorAll('nav form');
+
+      function filterCart(keywordRaw) { // Fungsi untuk mem-filter item keranjang berdasarkan kata kunci
+        const keyword = (keywordRaw || "").trim().toLowerCase(); // Normalisasi keyword: kalau null → "", trim spasi, lalu ke huruf kecil
+        const items = document.querySelectorAll(".item-keranjang"); // Ambil semua elemen card item keranjang
+        let anyVisible = false; // Flag untuk cek apakah masih ada item yang tampil
+
+        items.forEach(item => { // Loop setiap item keranjang
+          const nameEl = item.querySelector(".nama-produk"); // Cari elemen yang berisi nama produk
+          const name = (nameEl ? nameEl.innerText : "").toLowerCase(); // Ambil teks nama produk (kalau ada), lalu ke huruf kecil
+
+          const match = !keyword || name.includes(keyword); // match = true jika keyword kosong atau nama mengandung keyword
+          item.style.display = match ? "" : "none"; // Jika cocok → tampilkan, kalau tidak cocok → sembunyikan
+
+          if (match) anyVisible = true; // Jika ada minimal satu item yang cocok, set flag anyVisible = true
+        });
+
+        // Pesan jika tidak ada hasil
+        let msg = document.getElementById("emptyCartSearchMsg"); // Cari elemen pesan "tidak ada hasil" kalau sudah pernah dibuat
+
+        if (!anyVisible && keyword) { // Jika tidak ada item yang tampil dan keyword tidak kosong
+          if (!msg) { // Kalau pesan belum ada, buat baru
+            msg = document.createElement("p"); // Buat elemen paragraf
+            msg.id = "emptyCartSearchMsg"; // Set ID supaya bisa dicari lagi nanti
+            msg.className = "text-center text-muted mt-4"; // Tambahkan class untuk styling (tengah & grey)
+            msg.textContent = "Tidak ada item di keranjang yang cocok dengan pencarian."; // Isi teks pesan
+            document.querySelector(".cart-container").appendChild(msg); // Tempel pesan di dalam container keranjang
+          }
+        } else {
+          if (msg) msg.remove(); // Jika ada item yang cocok atau keyword kosong → hapus pesan "tidak ada hasil" kalau ada
+        }
+      }
+
+      searchForms.forEach(form => { // Loop ke semua form search yang ada di navbar (desktop & mobile)
+        const input = form.querySelector('input[name="q"]'); // Ambil elemen input text yang punya name="q"
+        if (!input) return; // Kalau form ini bukan form search (tidak punya input q) → skip
+
+        // Cegah submit ke server → filter dilakukan secara lokal saja
+        form.addEventListener("submit", (e) => { // Saat user menekan Enter di field search
+          e.preventDefault(); // Mencegah reload page / request ke server
+          filterCart(input.value); // Jalankan pencarian lokal berdasarkan kata kunci
+        });
+
+        // Live filter saat user mengetik
+        input.addEventListener("input", () => { // Event ketika karakter berubah saat diketik
+          const val = input.value; // Ambil nilai input saat ini
+
+          if (!val.trim()) { // Jika input kosong atau hanya spasi
+            // tampilkan ulang semua item keranjang
+            document.querySelectorAll(".item-keranjang").forEach(item => {
+              item.style.display = ""; // Reset display ke semula (tampilkan)
+            });
+
+            const msg = document.getElementById("emptyCartSearchMsg"); // Cari pesan "tidak ada hasil" jika ada
+            if (msg) msg.remove(); // Hapus pesan karena pencarian kosong
+          } else {
+            filterCart(val); // Jika ada keyword → jalankan filter untuk menyembunyikan/menampilkan item
+          }
+        });
+      });
+    });
   </script>
 </body>
 

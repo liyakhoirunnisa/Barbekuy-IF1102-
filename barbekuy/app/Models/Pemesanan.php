@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
+use App\Models\DetailPemesanan;
 
 class Pemesanan extends Model
 {
@@ -78,12 +82,12 @@ class Pemesanan extends Model
     /* ============
      |  RELATIONS
      ============*/
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
 
-    public function details()
+    public function details(): HasMany
     {
         return $this->hasMany(DetailPemesanan::class, 'id_pesanan', 'id_pesanan');
     }

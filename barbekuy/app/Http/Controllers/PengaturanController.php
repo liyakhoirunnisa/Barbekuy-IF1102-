@@ -61,16 +61,4 @@ class PengaturanController extends Controller
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }
-
-    public function updateNotif(Request $request)
-    {
-        $user = $request->user();
-
-        $user->update([
-            'notif_email' => $request->boolean('notif_email'),
-            'notif_payment' => $request->boolean('notif_payment'),
-        ]);
-
-        return back()->with('success', 'Preferensi notifikasi disimpan.');
-    }
 }

@@ -7,7 +7,12 @@
     <title>{{ request()->is('daftar-admin') ? 'Daftar Admin - Barbekuy' : 'Daftar - Barbekuy' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+    {{-- Google Font --}}
+    <!-- Import font Poppins dari Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -50,6 +55,28 @@
 
         .logo {
             width: 120px;
+        }
+
+        /* === Tombol kembali === */
+        .btn-back-register {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #751A25;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            transition: color .2s ease;
+        }
+
+        .btn-back-register i {
+            font-size: 1rem;
+        }
+
+        .btn-back-register:hover {
+            color: #a00000;
+            text-decoration: none;
         }
 
         .register-right {
@@ -172,7 +199,10 @@
                 </div>
 
                 {{-- Kembali ke halaman login --}}
-                <a href="{{ route('login') }}" class="btn-back mb-3">&larr; Kembali</a>
+                <a href="{{ route('login') }}" class="btn-back-register">
+                    <i class="bi bi-chevron-left"></i>
+                    <span>Kembali</span>
+                </a>
 
                 <h2>{{ request()->is('daftar-admin') ? 'Daftar Admin' : 'Daftar' }}</h2>
                 <p>{{ request()->is('daftar-admin') ? 'Buat akun admin untuk mengelola sistem.' : 'Mari kita siapkan agar anda dapat mengakses akun anda.' }}</p>

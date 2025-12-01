@@ -364,11 +364,6 @@
           </a>
         </div>
 
-        <div>
-          <a href="{{ url('/chat') }}" class="text-white text-decoration-none d-flex align-items-center justify-content-center">
-            <span class="me-2">Chat kami</span>
-            <i class="bi bi-chat-dots"></i>
-          </a>
         </div>
       </div>
     </div>
@@ -521,24 +516,29 @@
           }
 
           async function cekStok() {
-          const mulaiRaw=document.getElementById('tanggalMulaiSewa').value;
-          const pengembalianRaw=document.getElementById('tanggalPengembalian').value;
-          const jumlah=Number(document.getElementById('jumlahSewa').value || 1);
-          const info=document.getElementById('stokInfo');
+          const mulaiRaw = document.getElementById('tanggalMulaiSewa').value;
+          const pengembalianRaw = document.getElementById('tanggalPengembalian').value;
+          const jumlahInput = document.getElementById('jumlahSewa');
+          let jumlah = Number(jumlahInput.value || 1);
+          const info = document.getElementById('stokInfo');
 
           if (!mulaiRaw || !pengembalianRaw) {
-          info.innerHTML=`<div class="text-danger fw-semibold">Pilih kedua tanggal terlebih dahulu.</div>`;
+          info.innerHTML = `<div class="text-danger fw-semibold">Pilih kedua tanggal terlebih dahulu.</div>`;
           return;
           }
+
           if (toDateUTC(pengembalianRaw) <= toDateUTC(mulaiRaw)) {
-            info.innerHTML=`<div class="text-danger fw-semibold">
+            info.innerHTML=`
+            <div class="text-danger fw-semibold">
             Tanggal pengembalian harus setelah tanggal sewa (minimal H+1).
             </div>`;
             return;
             }
 
+            info.innerHTML = `<div class="text-muted">Mengecek stok...</div>`;
+
             try {
-            const res = await fetch(`/produk/${currentProdukId}/stok-tersedia`, {
+            const res = await fetch(`/produk/${encodeURIComponent(currentProdukId)}/stok-tersedia`, {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
@@ -552,23 +552,60 @@
             })
             });
 
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-            throw new Error(data.message || 'Gagal cek stok');
+            let data = null;
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+            data = await res.json();
+            } else {
+            // kalau bukan JSON, anggap error
+            throw new Error('Respon bukan JSON');
             }
+
+            if (!res.ok || !data) {
+            throw new Error(data?.message || 'Gagal cek stok');
+            }
+
+            // === mirror logika di keranjang ===
+            const stokTersedia = data.stok_tersedia ?? null;
+            const bisaDipesan = (data.bisa_dipesan !== false); // kalau undefined → dianggap bisa
 
             const durasiHari = hitungDurasiHari(mulaiRaw, pengembalianRaw);
             const mulai = formatTanggal(mulaiRaw);
             const pengembalian = formatTanggal(pengembalianRaw);
 
-            if (data.bisa_dipesan) {
+            // clamp jumlah jika server bilang stok tidak cukup
+            if (!bisaDipesan) {
+            const maxQty = typeof stokTersedia === 'number' ? stokTersedia : 0;
+            if (maxQty > 0) {
+            jumlahInput.value = maxQty;
+            } else {
+            jumlahInput.value = 1;
+            }
+
+            info.innerHTML = `
+            <div class="alert alert-danger py-2">
+              Maaf, stok tidak mencukupi. Tersedia: <strong>${stokTersedia ?? 0}</strong>.
+            </div>`;
+            return;
+            }
+
+            // kalau stok cukup
+            if (typeof stokTersedia === 'number' && stokTersedia > 0) {
+            // set max di input jumlah
+            jumlahInput.max = stokTersedia;
+            if (jumlah > stokTersedia) {
+            jumlah = stokTersedia;
+            jumlahInput.value = stokTersedia;
+            }
+            }
+
             const btnHTML = (CURRENT_ACTION === 'buy')
-            // Saat mode 'buy' → langsung ajak ke halaman Pemesanan:
+            // mode BELI → langsung ke halaman Pemesanan
             ? `<button class="btn mt-2" style="background-color:#751A25; color:white;"
               onclick="redirectToPemesanan('${currentProdukId}', '${mulaiRaw}', '${pengembalianRaw}', ${jumlah})">
               Lanjut ke Pemesanan
             </button>`
-            // Saat mode 'cart' → masukkan ke keranjang:
+            // mode CART → tambah ke keranjang
             : `<button class="btn mt-2" style="background-color:#751A25; color:white;"
               onclick="tambahKeKeranjang('${currentProdukId}', '${mulaiRaw}', '${pengembalianRaw}', ${jumlah}, ${durasiHari})">
               Tambah ke Keranjang
@@ -576,22 +613,18 @@
 
             info.innerHTML = `
             <div class="alert alert-success py-2">
-              Stok tersedia (${data.stok_tersedia}) untuk <strong>${mulai}</strong> s/d <strong>${pengembalian}</strong><br>
+              Stok tersedia ${stokTersedia !== null ? `(<strong>${stokTersedia}</strong>)` : ''}
+              untuk <strong>${mulai}</strong> s/d <strong>${pengembalian}</strong><br>
               Lama sewa: <strong>${durasiHari} hari</strong>
             </div>
             ${btnHTML}
             `;
-            } else {
-            info.innerHTML = `
-            <div class="alert alert-danger py-2">
-              Maaf, stok tidak mencukupi. Tersedia: <strong>${data.stok_tersedia}</strong>.
-            </div>`;
-            }
-
             } catch (e) {
+            console.error(e);
             info.innerHTML = `<div class="alert alert-danger py-2">Terjadi kesalahan saat cek stok.</div>`;
             }
             }
+            
             function redirectToPemesanan(idProduk, mulaiRaw, pengembalianRaw, jumlah) {
             if (!mulaiRaw || !pengembalianRaw || !jumlah) {
             alert('Lengkapi tanggal sewa, pengembalian, dan jumlah.');

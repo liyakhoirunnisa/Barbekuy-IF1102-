@@ -693,6 +693,16 @@
             /* Background merah marun yang lebih gelap */
         }
 
+        .native-file-input {
+            position: absolute;
+            inset: 0;
+            /* penuh mengikuti label */
+            opacity: 0;
+            /* tak terlihat */
+            cursor: pointer;
+            /* kursor tangan */
+        }
+
         .preview-container {
             /* Wrapper untuk area preview gambar KTP */
             margin-top: 1rem;
@@ -1196,10 +1206,12 @@
                         Drag &amp; drop KTP ke sini atau klik untuk memilih<br>Mendukung PNG &amp; JPG
                     </p> <!-- Teks instruksi format file dan cara upload -->
 
-                    <label> <!-- Label yang membungkus tombol pilih file & input file -->
-                        <span class="btn-choose-file">Pilih File</span> <!-- Tombol visual untuk memilih file -->
-                        <input id="fileInput" type="file" name="ktp" class="hidden" accept=".png,.jpg,.jpeg"
-                            required> <!-- Input file asli (disembunyikan), menerima PNG/JPG/JPEG dan wajib diisi -->
+                    <label class="relative inline-block">
+                        <span class="btn-choose-file">Pilih File</span>
+                        <input id="fileInput" type="file" name="ktp"
+                            class="native-file-input"
+                            accept=".png,.jpg,.jpeg"
+                            required>
                     </label>
                 </div>
 
@@ -1348,7 +1360,8 @@
         });
 
         dropZone?.addEventListener('click', (e) => {
-            if (e.target.tagName.toLowerCase() === 'label' || e.target.tagName.toLowerCase() === 'input') return;
+            if (e.target.closest('label')) return;
+
             if (!sedangGantiKTP) fileInput.click();
             sedangGantiKTP = false;
         });
@@ -1359,11 +1372,14 @@
             previewContainer.classList.add('hidden');
             dropZone.classList.remove('hidden');
         });
+        const formPemesanan = document.getElementById('formPemesanan');
 
-        document.getElementById('formPemesanan').addEventListener('submit', function(e) {
+        formPemesanan.addEventListener('submit', function(e) {
+            // kalau belum ada file KTP
             if (!fileInput.files.length) {
-                e.preventDefault();
-                alert('Silakan upload foto KTP terlebih dahulu.');
+                e.preventDefault(); // tahan submit
+                // pakai validasi bawaan browser, pesan default: "Harap isi bidang ini."
+                fileInput.reportValidity();
             }
         });
 

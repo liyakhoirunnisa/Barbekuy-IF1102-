@@ -12,15 +12,21 @@ $user = auth()->user();
 // Tentukan nama yang ditampilkan di navbar
 $displayName = null;
 if ($user) {
-// Utamakan first_name + last_name jika ada
 $displayName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
-
-// Jika keduanya kosong, fallback ke kolom "name"
 if ($displayName === '') {
 $displayName = $user->name ?? null;
 }
 }
+
+/* 🔍 SEARCH TAMPIL HANYA DI MENU & KERANJANG */
+$currentRoute = \Illuminate\Support\Facades\Route::currentRouteName();
+$showSearch = in_array($currentRoute, [
+'menu',
+'keranjang.index',
+'produk.search', // 🔥 tambahkan ini
+]);
 @endphp
+
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -162,12 +168,27 @@ $displayName = $user->name ?? null;
     </a>
 
     {{-- 🔍 SEARCH BAR (desktop) --}}
+    @if($showSearch)
     <form class="d-none d-lg-block" action="{{ url('/search') }}" method="GET">
-      <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border">
+      <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border position-relative">
         <i class="bi bi-search me-2 text-dark"></i>
-        <input type="text" name="q" placeholder="Cari..." class="border-0 outline-none w-100" style="font-size: 0.95rem; color: #000;">
+
+        <input
+          type="text"
+          name="q"
+          placeholder="Cari..."
+          value="{{ request('q') }}"
+          class="border-0 outline-none w-100 search-input"
+          style="font-size: 0.95rem; color: #000;">
+
+        <span class="clear-search d-none" onclick="clearSearch()"
+          style="cursor:pointer; position:absolute; right:12px; font-size:18px; color:#777;">
+          &times;
+        </span>
       </div>
+
     </form>
+    @endif
 
     {{-- ☰ TOGGLER HP --}}
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -277,6 +298,7 @@ $displayName = $user->name ?? null;
       </ul>
 
       {{-- 🔍 SEARCH HP --}}
+      @if($showSearch)
       <form class="d-lg-none mt-3 w-100" action="{{ url('/search') }}" method="GET">
         <div class="search-box d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow-sm border">
           <span class="icon me-2" aria-hidden="true">
@@ -285,9 +307,45 @@ $displayName = $user->name ?? null;
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85a1 1 0 0 0-.017-.017zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
             </svg>
           </span>
-          <input type="text" name="q" placeholder="Cari..." class="border-0 outline-none w-100" style="font-size:.95rem;color:#000;">
+          <input
+            type="text"
+            name="q"
+            placeholder="Cari..."
+            value="{{ request('q') }}"
+            class="border-0 outline-none w-100"
+            style="font-size:.95rem;color:#000;">
         </div>
       </form>
+      @endif
     </div>
   </div>
 </nav>
+<script>
+  function clearSearch() {
+    const input = document.querySelector('.search-input');
+    input.value = "";
+    input.focus();
+    document.querySelector('.clear-search').classList.add('d-none');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.querySelector('.search-input');
+    const clearBtn = document.querySelector('.clear-search');
+
+    if (!input) return;
+
+    // tampilkan tombol X kalau input ada isinya
+    input.addEventListener('input', () => {
+      if (input.value.trim() !== "") {
+        clearBtn.classList.remove('d-none');
+      } else {
+        clearBtn.classList.add('d-none');
+      }
+    });
+
+    // jika halaman berasal dari hasil pencarian → tampilkan X
+    if (input.value.trim() !== "") {
+      clearBtn.classList.remove('d-none');
+    }
+  });
+</script>

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage; // ⬅️ WAJIB: dipakai oleh cekStok()
+use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon; 
 
 class ProdukController extends Controller
 {
@@ -35,25 +37,58 @@ class ProdukController extends Controller
     public function cekStok(Request $request, string $id)
     {
         $data = $request->validate([
-            'tanggal_mulai' => ['required', 'date'],
-            'tanggal_pengembalian' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'jumlah' => ['required', 'integer', 'min:1'],
+            'tanggal_mulai'         => ['required', 'date'],
+            'tanggal_pengembalian'  => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'jumlah'                => ['required', 'integer', 'min:1'],
         ]);
 
-        $produk = Produk::find($id); // ⬅️ pastikan import model di atas
+        $produk = Produk::find($id);
         if (! $produk) {
-            return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan.'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan.',
+            ], 404);
         }
 
-        // Versi dasar: stok_tersedia = stok di tabel produk
-        // (kalau sudah ada tabel booking/pesanan, hitung sisa = stok - jumlah_terbooking_di_rentang)
-        $stokTersedia = (int) ($produk->stok ?? 0);
+        // Normalisasi tanggal ke format Y-m-d
+        $mulaiSql   = Carbon::parse($data['tanggal_mulai'])->format('Y-m-d');
+        $selesaiSql = Carbon::parse($data['tanggal_pengembalian'])->format('Y-m-d');
+
+        // ============================
+        // HITUNG JUMLAH YANG SUDAH DIPESAN DI RENTANG TANGGAL
+        // (hanya dari tabel pemesanan, BUKAN dari keranjang)
+        // ============================
+        $dipakai = DB::table('detail_pemesanan')
+            ->join('pemesanan', 'detail_pemesanan.id_pesanan', '=', 'pemesanan.id_pesanan')
+            ->where('detail_pemesanan.id_produk', $id)
+            ->whereIn('pemesanan.status_pesanan', [
+                'Belum Bayar',
+                'Menunggu Konfirmasi',
+                'Diproses',
+                'Disewa',
+            ])
+            ->where(function ($q) use ($mulaiSql, $selesaiSql) {
+                // overlap tanggal sewa
+                $q->whereBetween('pemesanan.tanggal_sewa', [$mulaiSql, $selesaiSql])
+                    ->orWhereBetween('pemesanan.tanggal_pengembalian', [$mulaiSql, $selesaiSql])
+                    ->orWhere(function ($qq) use ($mulaiSql, $selesaiSql) {
+                        $qq->where('pemesanan.tanggal_sewa', '<=', $mulaiSql)
+                            ->where('pemesanan.tanggal_pengembalian', '>=', $selesaiSql);
+                    });
+            })
+            ->sum('detail_pemesanan.jumlah_sewa');
+
+        $stokTotal   = (int) ($produk->stok ?? 0);
+        $stokSisa    = max(0, $stokTotal - (int) $dipakai);
+        $diminta     = (int) $data['jumlah'];
+        $bisaDipesan = $stokSisa >= $diminta;
 
         return response()->json([
-            'success' => true,
-            'stok' => (int) $produk->stok,
-            'stok_tersedia' => $stokTersedia,
-            'bisa_dipesan' => $stokTersedia >= (int) $data['jumlah'],
+            'success'        => true,
+            'stok_total'     => $stokTotal,
+            'dipakai'        => (int) $dipakai,
+            'stok_tersedia'  => $stokSisa,
+            'bisa_dipesan'   => $bisaDipesan,
         ]);
     }
 
@@ -173,5 +208,132 @@ class ProdukController extends Controller
         DB::table('produk')->where('id_produk', $id)->delete();
 
         return response()->json(['success' => true, 'message' => 'Produk berhasil dihapus.']);
+    }
+
+    public function search(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+
+        // Kalau kotak search kosong, balik ke halaman menu biasa
+        if ($q === '') {
+            return redirect()->route('menu');
+        }
+
+        // Cari berdasarkan nama, kategori, atau deskripsi
+        $produk = DB::table('produk')
+            ->where(function ($query) use ($q) {
+                $query->where('nama_produk', 'like', "%{$q}%")
+                    ->orWhere('kategori', 'like', "%{$q}%")
+                    ->orWhere('deskripsi', 'like', "%{$q}%");
+            })
+            ->get();
+
+        // Kirim hasil + keyword ke view 'menu'
+        return view('menu', [
+            'produk' => $produk,
+            'search' => $q,
+        ]);
+    }
+
+    public function cekKetersediaanTanggal($id, Request $request)
+    {
+        $mulaiRaw   = $request->query('mulai');
+        $selesaiRaw = $request->query('selesai');
+
+        try {
+            // === Normalisasi format tanggal ke Y-m-d ===
+            $mulai = $this->parseTanggal($mulaiRaw);
+            $selesai = $this->parseTanggal($selesaiRaw);
+
+            if (! $mulai || ! $selesai) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format tanggal tidak valid.',
+                ]);
+            }
+
+            $mulaiSql   = $mulai->format('Y-m-d');
+            $selesaiSql = $selesai->format('Y-m-d');
+
+            if ($mulaiSql > $selesaiSql) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal mulai tidak boleh lebih besar dari tanggal selesai.',
+                ]);
+            }
+
+            // Ambil produk
+            $produk = DB::table('produk')->where('id_produk', $id)->first();
+            if (! $produk) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk tidak ditemukan.',
+                ]);
+            }
+
+            // Hitung jumlah unit yang dipakai
+            $dipakai = DB::table('detail_pemesanan')
+                ->join('pemesanan', 'detail_pemesanan.id_pesanan', '=', 'pemesanan.id_pesanan')
+                // ⬆️ kalau di tabelmu nama kolomnya "id_pemesanan", ganti di sini
+                ->where('detail_pemesanan.id_produk', $id)
+                ->whereIn('pemesanan.status_pesanan', [
+                    'Belum Bayar',
+                    'Diproses',
+                    'Disewa',
+                    'Menunggu Konfirmasi',
+                ])
+                ->where(function ($q) use ($mulaiSql, $selesaiSql) {
+                    $q->whereBetween('pemesanan.tanggal_sewa', [$mulaiSql, $selesaiSql])
+                        ->orWhereBetween('pemesanan.tanggal_pengembalian', [$mulaiSql, $selesaiSql])
+                        ->orWhere(function ($qq) use ($mulaiSql, $selesaiSql) {
+                            $qq->where('pemesanan.tanggal_sewa', '<=', $mulaiSql)
+                                ->where('pemesanan.tanggal_pengembalian', '>=', $selesaiSql);
+                        });
+                })
+                ->sum('detail_pemesanan.jumlah_sewa');
+
+            $stokTotal = (int) ($produk->stok ?? 0);
+            $stokSisa  = max(0, $stokTotal - (int) $dipakai);
+
+            return response()->json([
+                'success'    => true,
+                'stok_total' => $stokTotal,
+                'dipakai'    => (int) $dipakai,
+                'stok_sisa'  => $stokSisa,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error cekKetersediaanTanggal', [
+                'id_produk' => $id,
+                'mulai'     => $mulaiRaw,
+                'selesai'   => $selesaiRaw,
+                'error'     => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membaca data stok.',
+            ]);
+        }
+    }
+
+    private function parseTanggal(?string $tanggal): ?Carbon
+    {
+        if (! $tanggal) {
+            return null;
+        }
+
+        // Coba format Y-m-d (standar HTML date input)
+        try {
+            return Carbon::createFromFormat('Y-m-d', $tanggal);
+        } catch (\Exception $e) {
+        }
+
+        // Coba format d/m/Y (seperti di screenshot)
+        try {
+            return Carbon::createFromFormat('d/m/Y', $tanggal);
+        } catch (\Exception $e) {
+        }
+
+        return null;
     }
 }

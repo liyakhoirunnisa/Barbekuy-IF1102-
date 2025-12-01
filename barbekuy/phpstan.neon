@@ -4,7 +4,9 @@ includes :
 parameters :
     paths:
         - app/
+        - routes/
+        - database/
 
         # Level 0 paling santai, Level 5 paling ketat
         # untuk pemula/proyek lama mulai dari 0 atau 1
-    level: 0
+    level: 1

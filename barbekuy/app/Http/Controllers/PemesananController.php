@@ -143,60 +143,75 @@ class PemesananController extends Controller
                     );
             } else {
                 // MIDTRANS
-                Config::$serverKey = config('midtrans.server_key');
+                Config::$serverKey    = config('midtrans.server_key');
                 Config::$isProduction = config('midtrans.is_production');
-                Config::$isSanitized = config('midtrans.is_sanitized');
-                Config::$is3ds = config('midtrans.is_3ds');
+                Config::$isSanitized  = config('midtrans.is_sanitized');
+                Config::$is3ds        = config('midtrans.is_3ds');
+
+                // 👇 TAMBAHKAN BARIS INI
+                $orderId = 'ORD-' . $p->id_pesanan . '-' . now()->format('YmdHis');
+                // contoh hasil: ORD-15-20251201_203045 (selalu beda tiap pesanan)
 
                 $params = [
                     'transaction_details' => [
-                        'order_id' => $p->id_pesanan,
+                        'order_id'     => $orderId,      // 👈 GANTI ke $orderId
                         'gross_amount' => $totalBayar,
                     ],
                     'item_details' => [
                         [
-                            'id' => 'produk',
-                            'price' => $subtotal,
+                            'id'       => 'produk',
+                            'price'    => $subtotal,
                             'quantity' => 1,
-                            'name' => 'Total Sewa',
+                            'name'     => 'Total Sewa',
                         ],
                         [
-                            'id' => 'layanan',
-                            'price' => $biayaLayanan,
+                            'id'       => 'layanan',
+                            'price'    => $biayaLayanan,
                             'quantity' => 1,
-                            'name' => 'Biaya Layanan',
+                            'name'     => 'Biaya Layanan',
                         ],
                     ],
                     'customer_details' => [
                         'first_name' => $p->nama_penerima,
-                        'email' => auth()->user()->email ?? 'noemail@example.com',
+                        'email'      => auth()->user()->email ?? 'noemail@example.com',
                     ],
                     'callbacks' => [
                         'finish' => route('midtrans.finish'),
                     ],
                 ];
 
-                // kalau error di sini → langsung ke catch dan di-rollback
+                // --- PANGGIL SNAP ---
                 $snap = Snap::createTransaction($params);
 
+                // AMANKAN akses ke token & redirect_url (support object ATAU array)
+                $snapToken = is_array($snap) ? ($snap['token'] ?? null) : ($snap->token ?? null);
+                $redirect  = is_array($snap) ? ($snap['redirect_url'] ?? null) : ($snap->redirect_url ?? null);
+
                 $p->update([
-                    'snap_token' => $snap->token ?? null,
+                    'snap_token' => $snapToken,
                     // status tetap "Belum Bayar" sampai pembayaran sukses
                 ]);
 
                 DB::commit();
                 $this->notifyAdmins($p);
 
-                return redirect()->away($snap->redirect_url);
+                // Kalau entah kenapa redirect url kosong → JANGAN bikin exception
+                if (empty($redirect)) {
+                    return redirect()
+                        ->route('riwayat.semua')
+                        ->with(
+                            'error',
+                            'Pesanan berhasil dibuat, tetapi gagal menghubungkan ke halaman pembayaran Midtrans. Silakan hubungi admin atau coba lagi.'
+                        );
+                }
+
+                return redirect()->away($redirect);
             }
         } catch (\Throwable $e) {
             DB::rollBack();
             report($e);
 
-            // Saat dev, kalau mau lihat pesan asli:
-            // return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
-
-            return back()->with('error', 'Gagal membuat pesanan, coba lagi.');
+            return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
 
@@ -353,7 +368,7 @@ class PemesananController extends Controller
             // CABANG METODE PEMBAYARAN
             if ($validated['metode_pembayaran'] === 'cod') {
                 $p->update([
-                    'status_pesanan' => 'Sedang Proses',
+                    'status_pesanan' => 'Diproses', // sama seperti di store()
                 ]);
 
                 DB::commit();
@@ -368,33 +383,36 @@ class PemesananController extends Controller
                     );
             } else {
                 // MIDTRANS
-                Config::$serverKey = config('midtrans.server_key');
+                Config::$serverKey    = config('midtrans.server_key');
                 Config::$isProduction = config('midtrans.is_production');
-                Config::$isSanitized = config('midtrans.is_sanitized');
-                Config::$is3ds = config('midtrans.is_3ds');
+                Config::$isSanitized  = config('midtrans.is_sanitized');
+                Config::$is3ds        = config('midtrans.is_3ds');
+
+                // 👇 TAMBAHKAN BARIS INI
+                $orderId = 'ORD-' . $p->id_pesanan . '-' . now()->format('YmdHis');
 
                 $params = [
                     'transaction_details' => [
-                        'order_id' => $p->id_pesanan,
+                        'order_id'     => $orderId,     // 👈 GANTI
                         'gross_amount' => $totalBayar,
                     ],
                     'item_details' => [
                         [
-                            'id' => 'produk',
-                            'price' => $subtotalAll,
+                            'id'       => 'produk',
+                            'price'    => $subtotalAll,
                             'quantity' => 1,
-                            'name' => 'Total Sewa',
+                            'name'     => 'Total Sewa',
                         ],
                         [
-                            'id' => 'layanan',
-                            'price' => $biayaLayanan,
+                            'id'       => 'layanan',
+                            'price'    => $biayaLayanan,
                             'quantity' => 1,
-                            'name' => 'Biaya Layanan',
+                            'name'     => 'Biaya Layanan',
                         ],
                     ],
                     'customer_details' => [
                         'first_name' => $p->nama_penerima,
-                        'email' => auth()->user()->email ?? 'noemail@example.com',
+                        'email'      => auth()->user()->email ?? 'noemail@example.com',
                     ],
                     'callbacks' => [
                         'finish' => route('midtrans.finish'),
@@ -403,24 +421,32 @@ class PemesananController extends Controller
 
                 $snap = Snap::createTransaction($params);
 
+                $snapToken = is_array($snap) ? ($snap['token'] ?? null) : ($snap->token ?? null);
+                $redirect  = is_array($snap) ? ($snap['redirect_url'] ?? null) : ($snap->redirect_url ?? null);
+
                 $p->update([
-                    'snap_token' => $snap->token ?? null,
-                    // status tetap "Belum Bayar"
+                    'snap_token' => $snapToken,
                 ]);
 
                 DB::commit();
                 $this->notifyAdmins($p);
 
-                return redirect()->away($snap->redirect_url);
+                if (empty($redirect)) {
+                    return redirect()
+                        ->route('riwayat.semua')
+                        ->with(
+                            'error',
+                            'Pesanan berhasil dibuat, tetapi gagal menghubungkan ke halaman pembayaran Midtrans. Silakan hubungi admin atau coba lagi.'
+                        );
+                }
+
+                return redirect()->away($redirect);
             }
         } catch (\Throwable $e) {
             DB::rollBack();
             report($e);
 
-            // sementara untuk debug lebih enak:
-            // return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
-
-            return back()->with('error', 'Gagal membuat pesanan, coba lagi.');
+            return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
 
