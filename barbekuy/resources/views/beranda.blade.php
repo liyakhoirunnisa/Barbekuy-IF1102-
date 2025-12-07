@@ -136,6 +136,7 @@
             /* Flexbox untuk isi kotak */
             flex-direction: column;
             /* Susunan konten vertikal */
+            padding-top: 0 !important;
         }
 
         .menu-card:hover {
@@ -146,16 +147,21 @@
 
         .menu-card img {
             /* Gambar di kotak menu */
+            /* KEMBALIKAN margin/padding atas ke 0 */
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+
+            /* Pastikan sudut atas membulat mengikuti card atau 0 */
             border-radius: 12px 12px 0 0;
-            /* Sudut atas membulat */
+
             width: 100%;
-            /* Lebar penuh kotak */
-            height: 260px;
-            /* Tinggi gambar */
+            /* Pertahankan tinggi yang sudah disesuaikan agar proporsional */
+            height: 370px;
+
+            /* Pastikan object-fit tetap 'contain' agar gambar tidak terpotong */
             object-fit: cover;
-            /* Gambar menyesuaikan ukuran tanpa merusak rasio */
-            object-position: center top;
-            /* Fokus gambar di tengah atas */
+            object-position: center;
+            background-color: transparent;
         }
 
         .menu-card .card-body {
@@ -170,15 +176,17 @@
 
         .menu-card .card-title {
             /* Judul menu di kotak menu */
-            font-size: 1.05rem;
+            font-size: 1.2rem;
             /* Ukuran font sedang */
             margin-bottom: 6px;
             /* Jarak bawah judul */
+            font-weight: 600;
+            /* Ketebalan font */
         }
 
         .menu-card .card-text.harga {
             /* Harga menu di kotak menu */
-            font-size: 1.2rem;
+            font-size: 1 rem;
             /* Sedikit lebih besar dari teks biasa */
             font-weight: 600;
             /* Teks agak tebal */
@@ -371,7 +379,7 @@
 
             .menu-card img {
                 /* Gambar di kotak menu */
-                height: 200px;
+                height: 300px;
                 /* Kurangi tinggi gambar agar pas layar kecil */
             }
 
@@ -487,7 +495,7 @@
 
             .menu-card img {
                 /* Gambar di kotak menu */
-                height: 170px;
+                height: 17  0px;
                 /* Kurangi tinggi gambar agar pas layar kecil */
             }
 
@@ -573,10 +581,8 @@
                     Dengan Barbekuy, kamu bisa fokus menikmati momen kebersamaan, sementara urusan perlengkapan kami yang tangani.
                 </p>
             </div>
-
         </div>
     </section>
-
 
     {{-- Menu Favorit (dinamis) --}}
     <section id="menu-favorit" class="responsive-padding"> <!-- Bagian menu favorit -->
@@ -593,7 +599,7 @@
                 $harga = $p->harga ?? $p->harga_satuan ?? 0;
                 @endphp
 
-                <div class="col-md-4 mb-4"> <!-- Kolom untuk tiap kotak menu -->
+                <div class="col-12 col-md-6 col-lg-4 mb-4"> <!-- Kolom untuk tiap kotak menu -->
                     <div class="card menu-card"> <!-- Kotak menu -->
                         <img src="{{ $img }}" class="card-img-top" alt="{{ $p->nama_produk }}"> <!-- Gambar produk -->
                         <div class="card-body"> <!-- Konten kotak menu -->

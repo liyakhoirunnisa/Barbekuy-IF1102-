@@ -32,7 +32,7 @@ class LupaSandiController extends Controller
     // Tampilkan halaman password baru (dari email reset)
     public function showResetForm(Request $request, $token)
     {
-        return view('auth.resetpassword', [
+        return view('auth.resetPassword', [
             'token' => $token,
             'email' => $request->email,
         ]);

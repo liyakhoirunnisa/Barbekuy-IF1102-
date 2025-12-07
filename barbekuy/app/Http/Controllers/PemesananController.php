@@ -573,4 +573,19 @@ class PemesananController extends Controller
             report($e);
         }
     }
+
+    public function batalkan($id)
+    {
+        $order = Pemesanan::where('id_pesanan', $id)
+            ->whereIn('status_pesanan', ['Belum Bayar', 'Diproses'])
+            ->where('id_user', auth()->id()) // biar user cuma bisa batal pesanan sendiri
+            ->firstOrFail();
+
+        $order->status_pesanan = 'Dibatalkan';
+        $order->save();
+
+        // kalau pakai Midtrans & sudah bayar, di sini kamu bisa tambahin logic refund/cancel ke Midtrans
+
+        return redirect()->back()->with('success', 'Pesanan berhasil dibatalkan.');
+    }
 }

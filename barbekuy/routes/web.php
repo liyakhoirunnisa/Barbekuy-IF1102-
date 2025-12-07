@@ -128,6 +128,9 @@ Route::middleware(['auth', 'role:user'])->group(function () { // Group fitur pri
     Route::get('/pemesanan', [\App\Http\Controllers\PemesananController::class, 'create'])
         ->name('pemesanan.create'); // Halaman create checkout (selalu render pemesanan.blade.php)
 
+    Route::patch('/pemesanan/{id}/batalkan', [PemesananController::class, 'batalkan'])
+        ->name('pemesanan.batalkan');
+
     // 📌 Riwayat Pesanan
     Route::get('/riwayat', [PemesananController::class, 'riwayat'])->name('riwayat.semua'); // Halaman daftar riwayat pesanan user
     Route::get('/riwayat/pesanan', function () {

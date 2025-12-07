@@ -11,6 +11,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> <!-- Library ikon -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script> <!-- Library Chart.js untuk grafik -->
 
+  {{-- Google Font --}}
+  <!-- Import font Poppins dari Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"> <!-- Link Google Font -->
+
   <style>
     * {
       margin: 0;
@@ -87,97 +91,50 @@
 
     .stat-card {
       background: #fff;
-      /* Latar belakang kartu statistik putih */
       border-radius: 12px;
-      /* Sudut kartu melengkung 12px */
-      padding: 20px;
-      /* Ruang dalam isi kartu */
+      padding: 24px 22px;
+      /* 🔼 padding lebih tebal */
       box-shadow: 0 6px 18px rgba(16, 24, 32, 0.04);
-      /* Bayangan halus di bawah kartu */
-      min-height: 130px;
-      /* Tinggi minimum kartu agar tampilan rapi */
+      min-height: 180px;
+      /* 🔼 box lebih tinggi */
       display: flex;
-      /* Flexbox untuk mengatur isi kartu */
       flex-direction: column;
-      /* Susun isi kartu secara vertikal */
-      justify-content: space-between
-        /* Bagi ruang vertikal antara bagian atas & chart */
-    }
-
-    .stat-card .meta {
-      display: flex;
-      /* Flexbox untuk judul dan ikon di baris yang sama */
-      align-items: center;
-      /* Rata vertikal tengah */
-      justify-content: space-between
-        /* Jarak maksimal antara teks dan ikon */
+      justify-content: space-between;
     }
 
     .stat-card .meta i {
-      font-size: 20px;
-      /* Ukuran ikon di kartu statistik */
-      color: #751A25;
-      /* Warna ikon maroon sesuai brand */
+      font-size: 24px;
+      /* ikon sedikit lebih besar */
     }
 
     .stat-card h3 {
-      font-size: 14px;
-      /* Ukuran teks label kecil (Pesanan, Pelanggan, dst) */
-      color: #333;
-      /* Warna teks abu tua */
-      margin: 0;
-      /* Hilangkan margin default heading */
-      font-weight: 600
-        /* Tebal sedang untuk label */
+      font-size: 16px;
+      /* label "Pesanan" dll lebih besar */
     }
 
     .stat-card .value {
-      font-size: 22px;
-      /* Ukuran angka utama statistik */
+      font-size: 28px;
+      /* angka utama lebih besar */
       font-weight: 700;
-      /* Tebal untuk menonjolkan angka */
       color: #751A25;
-      /* Warna maroon untuk angka */
-      margin-top: 8px
-        /* Jarak atas dari label ke angka */
+      margin-top: 10px;
     }
 
     .stat-chart {
       width: 100%;
-      /* Chart lebar penuh dalam kartu */
-      height: 78px;
-      /* Tinggi area chart mini */
-      margin-top: 6px
-        /* Jarak atas dari angka ke chart */
+      height: 120px;
+      /* 🔼 area grafik diperbesar */
+      margin-top: 10px;
+      position: relative;
+      padding-top: 8px;
+      box-sizing: border-box;
     }
 
-    .stat-chart svg {
-      width: 100%;
-      /* SVG chart isi penuh container */
-      height: 100%
-        /* Tinggi SVG mengikuti tinggi stat-chart */
-    }
 
-    .stat-chart path {
-      stroke: #751A25;
-      /* Warna garis chart maroon */
-      stroke-width: 3;
-      /* Ketebalan garis chart */
-      fill: none;
-      /* Tidak ada isi area di bawah garis */
-      stroke-linecap: round;
-      /* Ujung garis dibuat membulat */
-      stroke-linejoin: round
-        /* Sudut pertemuan garis dibuat halus */
-    }
-
-    .stat-chart circle {
-      fill: #fff;
-      /* Isi titik chart putih */
-      stroke: #751A25;
-      /* Garis luar titik maroon */
-      stroke-width: 2
-        /* Ketebalan garis luar titik */
+    /* Biar canvas selalu ikut ukuran container */
+    .stat-chart canvas {
+      width: 100% !important;
+      height: 100% !important;
     }
 
     .section-title {
@@ -196,14 +153,14 @@
       /* Gunakan flexbox untuk deretan kartu produk */
       justify-content: flex-start;
       /* Susun dari kiri ke kanan (tidak di-center) */
-      gap: 34px;
+      gap: 20px;
       /* Jarak antar kartu produk */
-      margin-bottom: 34px
+      margin-bottom: 26px
         /* Jarak bawah dari deretan produk ke section berikutnya */
     }
 
     .product-card {
-      width: 300px;
+      width: 220px;
       /* Lebar tetap kartu produk */
       background: #fff;
       /* Latar belakang kartu putih */
@@ -211,7 +168,7 @@
       /* Sudut kartu melengkung */
       box-shadow: 0 6px 18px rgba(16, 24, 32, 0.04);
       /* Bayangan halus kartu */
-      padding: 22px;
+      padding: 10px 12px 14px;
       /* Ruang dalam kartu */
       text-align: center;
       /* Seluruh teks di tengah */
@@ -221,14 +178,14 @@
       /* Susun isi kartu secara vertikal */
       align-items: center;
       /* Rata tengah horizontal */
-      gap: 12px
+      gap: 10px
         /* Jarak vertikal antar elemen di dalam kartu */
     }
 
     .product-card img {
-      width: 180px;
+      width: 140px;
       /* Lebar gambar produk */
-      height: 180px;
+      height: 140px;
       /* Tinggi gambar produk */
       object-fit: cover;
       /* Gambar memenuhi kotak tanpa merusak proporsi */
@@ -241,22 +198,19 @@
       /* Ukuran nama produk */
       color: #222;
       /* Warna teks abu gelap */
-      margin: 0
-        /* Hilangkan margin bawaan heading */
     }
 
     .product-card .price {
-      font-size: 20px;
+      font-size: 14px;
       /* Ukuran teks harga */
       color: #751A25;
       /* Warna harga maroon */
       font-weight: 800;
       /* Lebih tebal agar harga menonjol */
-      margin-top: 8px
-        /* Jarak atas dari nama produk ke harga */
     }
 
     .product-card small {
+      font-size: 12px;
       color: #777;
       /* Warna teks keterangan kecil "Terjual X" abu sedang */
       /* warna teks "Terjual ..." */
@@ -518,57 +472,39 @@
       {{-- 🔹 3 kartu statistik dinamis --}}
       <div class="top-cards"> <!-- Grid berisi 3 kartu statistik (Pesanan, Pelanggan, Pendapatan) -->
 
-        <div class="stat-card"> <!-- Kartu statistik pertama: Pesanan -->
-          <div class="meta"> <!-- Baris atas kartu: label + ikon -->
-            <h3>Pesanan</h3> <!-- Label kartu: total pesanan -->
-            <i class="bi bi-cart-fill"></i> <!-- Ikon keranjang Bootstrap Icons -->
-          </div> <!-- Tutup .meta -->
-          <div class="value">{{ number_format($pesananTotal ?? 0, 0, ',', '.') }}</div> <!-- Angka total pesanan (format ribuan) -->
-          <div class="stat-chart"> <!-- Area mini-chart dekoratif -->
-            <svg viewBox="0 0 200 60"> <!-- SVG untuk garis tren pesanan -->
-              <path d="M0 45 C30 38, 60 35, 90 38 C120 41, 150 35, 200 28" /> <!-- Garis lengkung tren -->
-              <circle cx="10" cy="44" r="2.2" /> <!-- Titik-titik data di sepanjang garis -->
-              <circle cx="50" cy="39" r="2.2" />
-              <circle cx="90" cy="38" r="2.2" />
-              <circle cx="130" cy="40" r="2.2" />
-              <circle cx="170" cy="35" r="2.2" />
-            </svg>
-          </div> <!-- Tutup .stat-chart -->
-        </div> <!-- Tutup stat-card Pesanan -->
+        <div class="stat-card">
+          <div class="meta">
+            <h3>Pesanan</h3>
+            <i class="bi bi-cart-fill"></i>
+          </div>
+          <div class="value">{{ number_format($pesananTotal ?? 0, 0, ',', '.') }}</div>
+          <div class="stat-chart">
+            <canvas id="chartPesanan"></canvas>
+          </div>
+        </div>
 
-        <div class="stat-card"> <!-- Kartu statistik kedua: Pelanggan -->
-          <div class="meta"> <!-- Baris atas kartu: label + ikon -->
-            <h3>Pelanggan</h3> <!-- Label kartu: total pelanggan -->
-            <i class="bi bi-people-fill"></i> <!-- Ikon orang (grup) -->
-          </div> <!-- Tutup .meta -->
-          <div class="value">{{ number_format($pelangganTotal ?? 0, 0, ',', '.') }}</div> <!-- Angka total pelanggan -->
-          <div class="stat-chart"> <!-- Area mini-chart dekoratif -->
-            <svg viewBox="0 0 200 60"> <!-- SVG untuk garis tren pelanggan -->
-              <path d="M0 42 C30 36, 60 34, 90 36 C120 38, 150 33, 200 30" /> <!-- Garis tren -->
-              <circle cx="15" cy="41" r="2.2" /> <!-- Titik-titik data -->
-              <circle cx="60" cy="34" r="2.2" />
-              <circle cx="110" cy="36" r="2.2" />
-              <circle cx="160" cy="34" r="2.2" />
-            </svg>
-          </div> <!-- Tutup .stat-chart -->
-        </div> <!-- Tutup stat-card Pelanggan -->
+        <div class="stat-card">
+          <div class="meta">
+            <h3>Pelanggan</h3>
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <div class="value">{{ number_format($pelangganTotal ?? 0, 0, ',', '.') }}</div>
+          <div class="stat-chart">
+            <canvas id="chartPelanggan"></canvas>
+          </div>
+        </div>
 
-        <div class="stat-card"> <!-- Kartu statistik ketiga: Pendapatan -->
-          <div class="meta"> <!-- Baris atas kartu: label + ikon -->
-            <h3>Pendapatan</h3> <!-- Label kartu: total pendapatan -->
-            <i class="bi bi-cash-stack"></i> <!-- Ikon tumpukan uang -->
-          </div> <!-- Tutup .meta -->
-          <div class="value">Rp {{ number_format($pendapatanTotal ?? 0, 0, ',', '.') }}</div> <!-- Total pendapatan dalam format Rupiah -->
-          <div class="stat-chart"> <!-- Area mini-chart dekoratif -->
-            <svg viewBox="0 0 200 60"> <!-- SVG garis tren pendapatan -->
-              <path d="M0 44 C40 38, 80 36, 120 38 C150 40, 180 39, 200 36" /> <!-- Garis tren -->
-              <circle cx="20" cy="43" r="2.2" /> <!-- Titik-titik data -->
-              <circle cx="70" cy="36" r="2.2" />
-              <circle cx="120" cy="38" r="2.2" />
-              <circle cx="170" cy="37" r="2.2" />
-            </svg>
-          </div> <!-- Tutup .stat-chart -->
-        </div> <!-- Tutup stat-card Pendapatan -->
+        <div class="stat-card">
+          <div class="meta">
+            <h3>Pendapatan</h3>
+            <i class="bi bi-cash-stack"></i>
+          </div>
+          <div class="value">Rp {{ number_format($pendapatanTotal ?? 0, 0, ',', '.') }}</div>
+          <div class="stat-chart">
+            <canvas id="chartPendapatan"></canvas>
+          </div>
+        </div>
+
 
       </div> <!-- Tutup .top-cards (grid 3 kartu statistik) -->
 
@@ -621,6 +557,109 @@
     </div> <!-- Tutup .dashboard-content -->
     </div> <!-- Elemen penutup ekstra (pastikan struktur sesuai dengan layout utama) -->
   </main> <!-- Tutup main-content (wrapper konten utama) -->
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Helper: bikin sparkline modern (gradient, smooth, tooltip)
+      function createSparkline(canvasId, labels, data, isCurrency) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas || !data || data.length === 0) {
+          return;
+        }
+
+        var ctx = canvas.getContext('2d');
+
+        // Gradient maroon -> transparan
+        var gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(117, 26, 37, 0.30)');
+        gradient.addColorStop(1, 'rgba(117, 26, 37, 0)');
+
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              borderColor: '#751A25',
+              backgroundColor: gradient,
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 0,
+              pointHoverRadius: 3,
+              pointHitRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 2,
+                left: 0,
+                right: 0
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                enabled: true,
+                displayColors: false,
+                backgroundColor: '#111',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                padding: 8,
+                callbacks: {
+                  label: function(context) {
+                    var value = context.parsed.y;
+                    if (isCurrency) {
+                      return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                    }
+                    return value + ' total';
+                  }
+                }
+              }
+            },
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            scales: {
+              x: {
+                display: false,
+                grid: {
+                  display: false
+                }
+              },
+              y: {
+                display: false,
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // ==============================
+      // 📅 DATA DARI BACKEND (REAL)
+      // ==============================
+
+      const monthLabels = @json($chartLabels ?? []);
+      const pesananBulanan = @json($chartPesanan ?? []);
+      const pelangganBulanan = @json($chartPelanggan ?? []);
+      const pendapatanBulanan = @json($chartPendapatan ?? []);
+
+      createSparkline('chartPesanan', monthLabels, pesananBulanan, false);
+      createSparkline('chartPelanggan', monthLabels, pelangganBulanan, false);
+      createSparkline('chartPendapatan', monthLabels, pendapatanBulanan, true);
+    });
+  </script>
+
 </body> <!-- Tutup body halaman -->
 
 </html> <!-- Tutup dokumen HTML -->

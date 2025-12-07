@@ -959,6 +959,38 @@
       /* Tanpa outline */
     }
 
+    .ktp-preview {
+      /* Batasi lebar & tinggi gambar */
+      max-width: 100%;
+      /* biar gak melebar keluar container */
+      width: auto;
+      /* biar proporsional */
+      height: auto;
+      /* tetap jaga aspek rasio */
+      max-height: 260px;
+      /* 🔥 batasi tinggi gambar (silakan sesuaikan angka ini) */
+
+      object-fit: contain;
+      /* gambar tetap utuh, tidak terpotong */
+      border-radius: 8px;
+      border: 1px solid #eee;
+      display: block;
+    }
+
+    /* Ringkasan total (subtotal, biaya layanan, total pembayaran) */
+    .kv-amount {
+      max-width: 360px;
+      /* Biar tidak terlalu lebar */
+      margin-left: auto;
+      /* Geser ke kanan */
+      margin-top: 8px;
+    }
+
+    .kv-amount div:nth-child(2n) {
+      text-align: right;
+      /* Kolom nilai di kanan */
+    }
+
     @media (max-width: 600px) {
       /* Responsive untuk HP */
 
@@ -1065,7 +1097,7 @@
 
       .modal-body .items-table th:nth-child(1),
       .modal-body .items-table td:nth-child(1) {
-        width: 35%;
+        width: 45%;
         /* Kolom Produk */
       }
 
@@ -1077,7 +1109,7 @@
 
       .modal-body .items-table th:nth-child(3),
       .modal-body .items-table td:nth-child(3) {
-        width: 25%;
+        width: 45%;
         /* Harga */
       }
 
@@ -1182,10 +1214,15 @@
                 <th>Tanggal Pemesanan</th> <!-- Kolom tanggal -->
                 <th>Nama</th> <!-- Kolom nama penerima/user -->
                 <th>Status Pemesanan</th> <!-- Kolom status -->
+                <th>Biaya Layanan</th>
                 <th>Total</th> <!-- Kolom total harga -->
                 <th>Aksi</th> <!-- Kolom aksi (detail) -->
               </tr> <!-- Tutup baris header -->
             </thead> <!-- Tutup thead -->
+            @php
+            // 🔹 Biaya layanan tetap (tidak ambil dari database)
+            $BIAYA_LAYANAN = 1000;
+            @endphp
             <tbody id="txBody"> <!-- Body tabel dengan id txBody untuk JS -->
               @forelse ($orders as $order) <!-- Loop orders, tampilkan tiap order -->
               <tr> <!-- Baris order -->
@@ -1226,7 +1263,15 @@
                   </form> <!-- Tutup form status -->
                 </td> <!-- Tutup kolom status -->
 
-                <td>Rp{{ number_format($order->total_harga, 0, ',', '.') }}</td> <!-- Tampilkan total harga dengan format rupiah -->
+                <td>
+                  {{-- 🔹 Biaya Layanan (konstan) --}}
+                  Rp{{ number_format($BIAYA_LAYANAN, 0, ',', '.') }}
+                </td>
+
+                <td>
+                  {{-- Total (subtotal + biaya layanan) --}}
+                  Rp{{ number_format($order->total_harga, 0, ',', '.') }}
+                </td>
 
                 {{-- Aksi tetap: link Detail (atau nanti popup) --}} {{-- Kolom aksi: Detail --}}
                 <td> <!-- Kolom Aksi -->
@@ -1236,8 +1281,8 @@
                   return [
                   'nama' => optional($d->product)->nama_produk ?? 'Produk',
                   'qty' => (int)($d->jumlah ?? 1),
-                  'harga' => (int)($d->harga_satuan ?? $d->harga_sewa ?? 0),
-                  'subtotal' => (int)($d->subtotal ?? (($d->harga_satuan ?? $d->harga_sewa ?? 0) * ($d->jumlah ?? 1))),
+                  // Harga di modal = subtotal per item (total harga produk itu)
+                  'harga' => (int)($d->subtotal ?? (($d->harga_satuan ?? $d->harga_sewa ?? 0) * ($d->jumlah ?? 1))),
                   ];
                   })->values()->toArray();
 
@@ -1249,6 +1294,10 @@
                   ? asset('storage/' . ltrim($ktpPath, '/'))
                   : null;
 
+                  // Hitung subtotal = total_harga - biaya_layanan (tanpa ubah database)
+                  $subtotal = (int)($order->total_harga ?? 0);
+                  $grandTotal = $subtotal + $BIAYA_LAYANAN;
+
                   // Siapkan payload order untuk dikirim ke atribut data-order
                   $payload = [
                   'id' => $order->id_pesanan,
@@ -1256,11 +1305,13 @@
                   'nama' => $order->nama_penerima ?? optional($order->user)->name,
                   'tgl_pesan' => optional($order->created_at)?->format('d/m/Y'),
                   'tgl_sewa' => optional($order->tanggal_sewa)?->format('d/m/Y'),
-                  'tgl_kembali'=> optional($order->tanggal_pengembalian)?->format('d/m/Y'),
+                  'tgl_kembali' => optional($order->tanggal_pengembalian)?->format('d/m/Y'),
                   'status' => $order->status_pesanan,
-                  'total' => (int)($order->total_harga ?? 0),
+                  'subtotal' => $subtotal, // 70.000 (tetap)
+                  'biaya_layanan' => $BIAYA_LAYANAN, // 1.000
+                  'total' => $grandTotal, // 71.000 (total pembayaran)
                   'items' => $items,
-                  'ktp' => $ktpUrl, // 🔹 kirim URL KTP ke JS
+                  'ktp' => $ktpUrl,
                   ];
                   @endphp
 
@@ -1275,7 +1326,7 @@
               </tr> <!-- Tutup baris order -->
               @empty <!-- Jika tidak ada orders -->
               <tr> <!-- Baris fallback kosong -->
-                <td colspan="6" style="text-align:center;color:#777;">Belum ada transaksi.</td> <!-- Pesan belum ada transaksi -->
+                <td colspan="7" style="text-align:center;color:#777;">Belum ada transaksi.</td> <!-- Pesan belum ada transaksi -->
               </tr> <!-- Tutup baris fallback -->
               @endforelse <!-- Tutup forelse loop orders -->
             </tbody> <!-- Tutup tbody -->
@@ -1301,28 +1352,32 @@
               </div> <!-- Tutup div .modal-section (Informasi Pesanan) -->
 
               {{-- 🔹 Section Foto KTP --}} <!-- Komentar Blade: section khusus untuk menampilkan foto KTP -->
-              <div class="modal-section" id="md-ktp-section" style="display:none;"> <!-- Section KTP, awalnya disembunyikan (display:none) -->
-                <h4>Foto KTP</h4> <!-- Judul section foto KTP -->
+              <div class="modal-section" id="md-ktp-section" style="display:none;">
+                <h4>Foto KTP</h4>
                 <img id="md-ktp-img"
                   src=""
                   alt="KTP Pelanggan"
-                  style="max-width:100%;border-radius:8px;border:1px solid #eee;"> <!-- Gambar KTP, src akan di-set via JS, dengan styling border & rounded -->
+                  class="ktp-preview"> <!-- Gambar KTP, src akan di-set via JS, dengan styling border & rounded -->
               </div> <!-- Tutup div .modal-section (Foto KTP) -->
 
               {{-- 🔹 Item Pesanan --}} <!-- Komentar Blade: section daftar item yang dipesan -->
               <div class="modal-section"> <!-- Section untuk tabel item pesanan -->
-                <h4>Item</h4> <!-- Judul section item pesanan -->
-                <table class="items-table" id="md-items"> <!-- Tabel untuk menampilkan daftar item, akan diisi via JS -->
-                  <thead> <!-- Header tabel -->
-                    <tr> <!-- Baris header -->
-                      <th>Produk</th> <!-- Kolom nama produk -->
-                      <th>Qty</th> <!-- Kolom jumlah -->
-                      <th>Harga</th> <!-- Kolom harga satuan -->
-                      <th>Subtotal</th> <!-- Kolom subtotal per item -->
-                    </tr> <!-- Tutup baris header -->
-                  </thead> <!-- Tutup thead -->
-                  <tbody></tbody> <!-- Body tabel, kosong karena baris akan di-generate lewat JavaScript -->
-                </table> <!-- Tutup tabel items-table -->
+                <h4>Item</h4>
+                <table class="items-table" id="md-items">
+                  <thead>
+                    <tr>
+                      <th>Produk</th>
+                      <th>Qty</th>
+                      <th>Harga</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+
+                <!-- 🔥 Container ringkasan pembayaran -->
+                <div class="kv kv-amount" id="md-summary">
+                  <!-- Isi kolom ini nanti di-generate otomatis lewat JavaScript -->
+                </div>
               </div> <!-- Tutup div .modal-section (Item Pesanan) -->
             </div> <!-- Tutup div .modal-body -->
 
@@ -1391,7 +1446,7 @@
           emptyRow.id = 'txEmptyRow'; // Set id tr
           // Isi konten pesan kosong
           emptyRow.innerHTML = `
-          <td colspan="6" style="text-align:center;color:#777;padding:16px;">
+          <td colspan="7" style="text-align:center;color:#777;padding:16px;">
             Tidak ada transaksi yang cocok
           </td>`;
           txBody.appendChild(emptyRow); // Masukkan row kosong ke tbody
@@ -1522,7 +1577,6 @@
         ['Tanggal Sewa', data.tgl_sewa || '-'], // Baris tanggal sewa
         ['Pengembalian', data.tgl_kembali || '-'], // Baris tanggal kembali
         ['Status', data.status || '-'], // Baris status pesanan
-        ['Total', rupiah(data.total || 0)], // Baris total harga dalam format rupiah
       ].map(([k, v]) => `<div>${k}</div><div><strong>${v}</strong></div>`).join(''); // Ubah jadi HTML grid dengan label dan nilai lalu gabungkan
 
       // 🔹 Foto KTP
@@ -1542,17 +1596,28 @@
       const tbody = document.querySelector('#md-items tbody'); // Ambil tbody tabel item
       const items = Array.isArray(data.items) ? data.items : []; // Validasi items harus array
       tbody.innerHTML = items.length ?
-        items.map(it => ` // Jika ada item, buat baris tabel untuk setiap item
+        items.map(it => ` 
       <tr>
         <td>${it.nama || '-'}</td> <!-- Nama produk -->
         <td>${it.qty ?? '-'}</td> <!-- Jumlah -->
         <td>${rupiah(it.harga || 0)}</td> <!-- Harga -->
-        <td>${rupiah(it.subtotal || 0)}</td> <!-- Subtotal -->
       </tr>`).join('') // Gabungkan seluruh baris
         :
-        `<tr><td colspan="4" style="text-align:center;color:#777;">Tidak ada item.</td></tr>`; // Tampilkan pesan jika tidak ada item
+        `<tr><td colspan="3" style="text-align:center;color:#777;">Tidak ada item.</td></tr>`; // Tampilkan pesan jika tidak ada item
+      // 🔹 Ringkasan pembayaran: Subtotal, Biaya Layanan, Total
+      const summaryBox = document.getElementById('md-summary');
+      if (summaryBox) {
+        const subtotal = Number(data.subtotal ?? 0);
+        const fee = Number(data.biaya_layanan ?? 0);
+        const totalBayar = Number(data.total ?? subtotal + fee);
 
-      // buka
+        summaryBox.innerHTML = `
+    <div>Subtotal Pesanan</div><div>${rupiah(subtotal)}</div>
+    <div>Biaya Layanan</div><div>${rupiah(fee)}</div>
+    <div></div><div><hr style="border:0;border-top:1px solid #e5e7eb;margin:4px 0;"></div>
+    <div><strong>Total Pembayaran</strong></div><div><strong>${rupiah(totalBayar)}</strong></div>
+  `;
+      }
       // Tampilkan modal dengan menambah class open
       document.getElementById('orderModal').classList.add('open'); // Tambahkan class open agar modal muncul
     }); // Tutup click listener untuk membuka modal
