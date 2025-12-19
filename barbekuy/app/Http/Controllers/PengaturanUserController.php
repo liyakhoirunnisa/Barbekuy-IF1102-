@@ -38,9 +38,18 @@ class PengaturanUserController extends Controller
             'gender' => ['nullable', Rule::in(['L', 'P'])],
             'address' => ['nullable', 'string', 'max:2000'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['nullable', 'boolean'],
         ]);
 
         // ✅ Handle avatar (opsional)
+        if ($request->boolean('remove_avatar')) {
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            $validated['avatar_path'] = null;
+        }
+
         if ($request->hasFile('avatar')) {
             // hapus file lama jika ada
             if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
@@ -51,7 +60,7 @@ class PengaturanUserController extends Controller
         }
 
         // avatar bukan kolom di tabel, jadi kita buang
-        unset($validated['avatar']);
+        unset($validated['avatar'], $validated['remove_avatar']);
 
         // ✅ Update user dengan data tervalidasi
         $user->update([
@@ -61,7 +70,7 @@ class PengaturanUserController extends Controller
             'phone' => $validated['phone'] ?? $user->phone,
             'gender' => $validated['gender'] ?? $user->gender,
             'address' => $validated['address'] ?? $user->address,
-            'avatar_path' => $validated['avatar_path'] ?? $user->avatar_path,
+            'avatar_path' => array_key_exists('avatar_path', $validated) ? $validated['avatar_path'] : $user->avatar_path,
         ]);
 
         return back()->with('success', 'Profil berhasil diperbarui.');

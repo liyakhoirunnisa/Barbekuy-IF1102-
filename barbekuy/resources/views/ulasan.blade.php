@@ -297,10 +297,17 @@
                 <div class="flex items-center gap-3">
                     {{-- Bagian info user kiri --}}
 
+                    @if(!empty($r->avatar_path))
+                    <img
+                        src="{{ asset('storage/' . ltrim($r->avatar_path, '/')) }}"
+                        alt="Profil"
+                        class="w-10 h-10 rounded-full object-cover" />
+                    @else
                     <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                         {{-- Icon avatar user --}}
                         <i data-feather="user" class="w-5 h-5 text-white"></i>
                     </div>
+                    @endif
 
                     <div>
                         {{-- Nama user --}}

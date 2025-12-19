@@ -204,6 +204,22 @@
       /* Jarak bawah */
     }
 
+    .avatar-initial {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid #751A25;
+      margin: 0 auto 12px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #751A25;
+      color: #fff;
+      font-weight: 600;
+      font-size: 44px;
+      user-select: none;
+    }
+
     /* Semua tombol utama seragam */
     .btn-upload,
     .btn-save {
@@ -229,6 +245,12 @@
     .btn-save:hover {
       background: #3d030a;
       /* Warna hover */
+    }
+
+    .btn-upload:disabled,
+    .btn-save:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
     }
 
     .btn-cancel {
@@ -359,6 +381,25 @@
       /* Jarak antar alert */
       font-size: 14px;
       /* Ukuran teks alert */
+      position: relative;
+      padding-right: 40px;
+    }
+
+    .alert-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.7;
+    }
+
+    .alert-close:hover {
+      opacity: 1;
     }
 
     .alert-success {
@@ -414,6 +455,7 @@
       {{-- Area notifikasi sukses --}}
       @if(session('success')) {{-- Jika ada pesan sukses --}}
       <div class="alert alert-success">
+        <button type="button" class="alert-close" data-close-alert aria-label="Tutup">&times;</button>
         {{ session('success') }} {{-- Tampilkan pesan sukses --}}
       </div>
       @endif {{-- Tutup pengecekan success --}}
@@ -421,6 +463,7 @@
       {{-- Area notifikasi error --}}
       @if($errors->any()) {{-- Jika ada error validasi --}}
       <div class="alert alert-error"> {{-- Container error --}}
+        <button type="button" class="alert-close" data-close-alert aria-label="Tutup">&times;</button>
         <ul class="error-list"> {{-- Daftar error --}}
           @foreach($errors->all() as $e) {{-- Loop setiap error --}}
           <li>{{ $e }}</li> {{-- Tampilkan item error --}}
@@ -452,14 +495,26 @@
               <div class="profile-left"> {{-- Kolom kiri untuk avatar --}}
 
                 {{-- Menampilkan avatar user (jika ada) atau fallback --}}
-                <img
-                  src="{{ auth()->user()->avatar ? asset('storage/'.auth()->user()->avatar) : asset('images/paket ber4 xtra.png') }}"
-                  alt="Avatar">
+                <div id="avatarPreview">
+                  @if(!empty(auth()->user()->avatar_path))
+                  <img
+                    id="avatarImg"
+                    src="{{ asset('storage/'.ltrim(auth()->user()->avatar_path, '/')) }}"
+                    alt="Avatar">
+                  @else
+                  <div class="avatar-initial" id="avatarInitial">
+                    {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                  </div>
+                  @endif
+                </div>
 
                 <br> {{-- Jarak vertikal --}}
 
                 {{-- Tombol trigger untuk memilih foto --}}
-                <button type="button" class="btn-upload" id="btnUpload">Upload Baru</button>
+                <button type="button" class="btn-upload hidden-input" id="btnUpload" disabled>Upload Baru</button>
+
+                {{-- Tombol hapus avatar (muncul saat mode edit) --}}
+                <button type="button" class="btn-save btn-cancel hidden-input" id="btnDeleteAvatar" disabled>Hapus Avatar</button>
 
                 {{-- Input file tersembunyi untuk upload avatar --}}
                 <input
@@ -467,7 +522,11 @@
                   id="uploadFoto"
                   name="avatar"
                   accept="image/*"
-                  class="hidden-input">
+                  class="hidden-input"
+                  disabled>
+
+                {{-- Flag hapus avatar --}}
+                <input type="hidden" name="remove_avatar" id="removeAvatar" value="0">
               </div>
 
               <div class="profile-right"> {{-- Kolom kanan untuk detail profil --}}
@@ -480,6 +539,7 @@
                     name="first_name"
                     placeholder="Nama depan"
                     value="{{ old('first_name', auth()->user()->first_name) }}"
+                    required
                     readonly {{-- Tidak bisa diedit sebelum klik Edit --}}>
                 </div>
 
@@ -491,6 +551,7 @@
                     name="last_name"
                     placeholder="Nama belakang"
                     value="{{ old('last_name', auth()->user()->last_name) }}"
+                    required
                     readonly>
                 </div>
 
@@ -624,6 +685,24 @@
     // --- Upload avatar preview ---
     const btnUpload = document.getElementById("btnUpload"); // Tombol upload
     const inputUpload = document.getElementById("uploadFoto"); // Input file
+    const btnDeleteAvatar = document.getElementById("btnDeleteAvatar");
+    const removeAvatarInput = document.getElementById("removeAvatar");
+    const avatarPreview = document.getElementById("avatarPreview");
+
+    const renderAvatarInitial = () => {
+      if (!avatarPreview) return;
+      const initial = @json(strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)));
+      avatarPreview.innerHTML = `<div class="avatar-initial" id="avatarInitial">${initial}</div>`;
+    };
+
+    const ensureAvatarImg = () => {
+      if (!avatarPreview) return null;
+      let img = document.getElementById("avatarImg");
+      if (img) return img;
+      avatarPreview.innerHTML = `<img id="avatarImg" src="" alt="Avatar">`;
+      img = document.getElementById("avatarImg");
+      return img;
+    };
 
     if (btnUpload && inputUpload) {
       btnUpload.addEventListener("click", () => inputUpload.click()); // Klik tombol → buka file picker
@@ -632,14 +711,132 @@
         const file = event.target.files[0]; // Ambil file
         if (!file) return;
 
+        if (removeAvatarInput) removeAvatarInput.value = "0";
+
         const reader = new FileReader(); // Buat pembaca file
         reader.onload = (e) => {
-          const img = document.querySelector(".profile-left img"); // Pilih elemen gambar
-          img.src = e.target.result; // Tampilkan preview avatar
+          const img = ensureAvatarImg();
+          if (img) img.src = e.target.result; // Tampilkan preview avatar
         };
         reader.readAsDataURL(file); // Baca file
       });
     }
+
+    // --- Toggle edit mode (aktifkan input setelah klik Edit) ---
+    const profileForm = document.querySelector("form.profile-settings");
+    const btnEdit = document.getElementById("btnEdit");
+    const btnSave = document.getElementById("btnSave");
+    const btnCancel = document.getElementById("btnCancel");
+
+    const getEditableInputs = () => {
+      if (!profileForm) return [];
+      return Array.from(profileForm.querySelectorAll("input, textarea, select"))
+        .filter(el => el.name && el.name !== "_token");
+    };
+
+    const setEditMode = (isEditing) => {
+      const fields = getEditableInputs();
+      fields.forEach((el) => {
+        if (el.type === "file") {
+          el.disabled = !isEditing;
+          return;
+        }
+        if (el.type === "radio" || el.type === "checkbox") {
+          el.disabled = !isEditing;
+          return;
+        }
+        el.readOnly = !isEditing;
+      });
+
+      if (btnUpload) {
+        btnUpload.disabled = !isEditing;
+        btnUpload.classList.toggle("hidden-input", !isEditing);
+      }
+
+      if (btnDeleteAvatar) {
+        btnDeleteAvatar.disabled = !isEditing;
+        btnDeleteAvatar.classList.toggle("hidden-input", !isEditing);
+      }
+
+      if (btnEdit) btnEdit.classList.toggle("hidden-input", isEditing);
+      if (btnSave) btnSave.classList.toggle("hidden-input", !isEditing);
+      if (btnCancel) btnCancel.classList.toggle("hidden-input", !isEditing);
+    };
+
+    if (profileForm) {
+      // simpan state awal untuk tombol Batal
+      const original = {
+        values: {},
+        checked: {},
+        avatarHtml: avatarPreview ? avatarPreview.innerHTML : null,
+        removeAvatar: removeAvatarInput ? removeAvatarInput.value : "0",
+      };
+
+      getEditableInputs().forEach((el) => {
+        if (el.type === "radio" || el.type === "checkbox") {
+          original.checked[el.name + ":" + el.value] = el.checked;
+        } else if (el.type !== "file") {
+          original.values[el.name] = el.value;
+        }
+      });
+
+      // Default: mode view (harus klik Edit dulu)
+      setEditMode(false);
+
+      if (btnEdit) {
+        btnEdit.addEventListener("click", () => setEditMode(true));
+      }
+
+      if (btnCancel) {
+        btnCancel.addEventListener("click", () => {
+          // reset nilai input
+          getEditableInputs().forEach((el) => {
+            if (el.type === "file") {
+              el.value = "";
+              return;
+            }
+            if (el.type === "radio" || el.type === "checkbox") {
+              const key = el.name + ":" + el.value;
+              el.checked = Boolean(original.checked[key]);
+              return;
+            }
+            if (Object.prototype.hasOwnProperty.call(original.values, el.name)) {
+              el.value = original.values[el.name];
+            }
+          });
+
+          // reset preview avatar
+          if (avatarPreview && original.avatarHtml !== null) {
+            avatarPreview.innerHTML = original.avatarHtml;
+          }
+          if (removeAvatarInput) removeAvatarInput.value = original.removeAvatar;
+
+          setEditMode(false);
+        });
+      }
+
+      if (btnDeleteAvatar) {
+        btnDeleteAvatar.addEventListener("click", () => {
+          if (inputUpload) inputUpload.value = "";
+          if (removeAvatarInput) removeAvatarInput.value = "1";
+          renderAvatarInitial();
+        });
+      }
+
+      // Kalau ada error validasi, tetap di mode edit agar mudah diperbaiki
+      const hasErrors = @json($errors->any());
+      if (hasErrors) {
+        setEditMode(true);
+      }
+    }
+
+    // Close alert (notif hijau)
+    document.querySelectorAll('[data-close-alert]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const alertEl = btn.closest('.alert');
+        if (alertEl) alertEl.remove();
+      });
+    });
   </script>
 
 </body>

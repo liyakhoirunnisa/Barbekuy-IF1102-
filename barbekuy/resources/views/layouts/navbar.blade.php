@@ -144,6 +144,14 @@ $showSearch = in_array($currentRoute, [
     vertical-align: -.25em;
   }
 
+  .nav-avatar-img {
+    width: 1.4em;
+    height: 1.4em;
+    border-radius: 50%;
+    object-fit: cover;
+    display: inline-block;
+  }
+
   .me-2 {
     margin-right: .5rem !important;
   }
@@ -235,6 +243,9 @@ $showSearch = in_array($currentRoute, [
           <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu"
             role="button" data-bs-toggle="dropdown" aria-expanded="false"
             title="{{ $displayName ?? 'Profil' }}">
+            @if($user && !empty($user->avatar_path))
+            <img class="nav-avatar-img" src="{{ asset('storage/' . ltrim($user->avatar_path, '/')) }}" alt="Profil">
+            @else
             <span class="icon-lg" aria-hidden="true" style="color:#751A25;">
               {{-- person-circle --}}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
@@ -242,6 +253,7 @@ $showSearch = in_array($currentRoute, [
                 <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 5.522 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1" />
               </svg>
             </span>
+            @endif
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileMenu">
             {{-- Header profil: ikon + nama + email --}}
@@ -250,7 +262,12 @@ $showSearch = in_array($currentRoute, [
                 <div class="me-3 rounded-circle bg-light d-flex align-items-center justify-content-center"
                   style="width:36px;height:36px;">
                   {{-- Inisial / ikon kecil --}}
+                  @if($user && !empty($user->avatar_path))
+                  <img src="{{ asset('storage/' . ltrim($user->avatar_path, '/')) }}" alt="Profil"
+                    style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                  @else
                   <i class="bi bi-person-fill" style="font-size:1.2rem;color:#751A25;"></i>
+                  @endif
                 </div>
                 <div>
                   @if(!empty($displayName))

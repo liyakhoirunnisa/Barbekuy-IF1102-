@@ -629,8 +629,20 @@
 
                     <!-- Profil user -->
                     <div class="d-flex align-items-center mb-3">
-                        <img src="{{ asset('images/default-user.png') }}" alt="Profil"
+                        @if(!empty($u->avatar_path))
+                        <img src="{{ asset('storage/' . ltrim($u->avatar_path, '/')) }}" alt="Profil"
                             class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;"> <!-- Foto user -->
+                        @else
+                        <div class="rounded-circle me-3 d-flex align-items-center justify-content-center"
+                            style="width:40px;height:40px;background:rgba(255,255,255,0.2);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
+                                style="width:22px;height:22px;color:#fff;">
+                                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+                                <path fill-rule="evenodd"
+                                    d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 5.522 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1" />
+                            </svg>
+                        </div>
+                        @endif
                         <div>
                             <h6 class="mb-0 fw-semibold">{{ $u->nama_user }}</h6> <!-- Nama user -->
                             <small>{{ $u->nama_produk }}</small> <!-- Produk yang diulas -->

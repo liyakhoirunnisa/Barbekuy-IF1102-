@@ -27,7 +27,8 @@ class BerandaController extends Controller
                 'ulasan.rating',
                 'ulasan.komentar',
                 'ulasan.created_at',
-                DB::raw('users.name as nama_user'),
+                DB::raw("COALESCE(NULLIF(TRIM(CONCAT(COALESCE(users.first_name, ''), ' ', COALESCE(users.last_name, ''))), ''), users.name) as nama_user"),
+                DB::raw('users.avatar_path as avatar_path'),
                 DB::raw('produk.nama_produk as nama_produk')
             )
             ->orderByDesc('ulasan.created_at')

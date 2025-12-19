@@ -19,7 +19,8 @@ class UlasanController extends Controller
                 'u.rating',
                 'u.komentar',                 // <-- dipakai di Blade: $r->komentar
                 'u.created_at',
-                DB::raw('us.name as user_name'),      // <-- $r->user_name
+                DB::raw("COALESCE(NULLIF(TRIM(CONCAT(COALESCE(us.first_name, ''), ' ', COALESCE(us.last_name, ''))), ''), us.name) as user_name"),      // <-- $r->user_name
+                DB::raw('us.avatar_path as avatar_path'),
                 DB::raw('p.nama_produk as product_name'), // <-- $r->product_name
             ])
             ->orderByDesc('u.created_at')

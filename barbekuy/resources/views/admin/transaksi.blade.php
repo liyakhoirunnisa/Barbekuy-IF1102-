@@ -1214,7 +1214,6 @@
                 <th>Tanggal Pemesanan</th> <!-- Kolom tanggal -->
                 <th>Nama</th> <!-- Kolom nama penerima/user -->
                 <th>Status Pemesanan</th> <!-- Kolom status -->
-                <th>Biaya Layanan</th>
                 <th>Total</th> <!-- Kolom total harga -->
                 <th>Aksi</th> <!-- Kolom aksi (detail) -->
               </tr> <!-- Tutup baris header -->
@@ -1262,11 +1261,6 @@
                     </div> <!-- Tutup .status-dd -->
                   </form> <!-- Tutup form status -->
                 </td> <!-- Tutup kolom status -->
-
-                <td>
-                  {{-- 🔹 Biaya Layanan (konstan) --}}
-                  Rp{{ number_format($BIAYA_LAYANAN, 0, ',', '.') }}
-                </td>
 
                 <td>
                   {{-- Total (subtotal + biaya layanan) --}}
@@ -1326,7 +1320,7 @@
               </tr> <!-- Tutup baris order -->
               @empty <!-- Jika tidak ada orders -->
               <tr> <!-- Baris fallback kosong -->
-                <td colspan="7" style="text-align:center;color:#777;">Belum ada transaksi.</td> <!-- Pesan belum ada transaksi -->
+                <td colspan="6" style="text-align:center;color:#777;">Belum ada transaksi.</td> <!-- Pesan belum ada transaksi -->
               </tr> <!-- Tutup baris fallback -->
               @endforelse <!-- Tutup forelse loop orders -->
             </tbody> <!-- Tutup tbody -->

@@ -253,6 +253,14 @@ $notifUnreadCount = auth()->check() // Mengecek apakah user sedang login / terau
     /* Tebal teks */
   }
 
+  .avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
   /* Khusus ikon logout (pindahan dari inline style) */
   .logout-icon {
     font-size: 22px;
@@ -391,7 +399,11 @@ $notifUnreadCount = auth()->check() // Mengecek apakah user sedang login / terau
 
     <div class="profile"> <!-- Container profile user -->
       <!-- Avatar bulat menampilkan huruf awal nama user, default 'A' -->
+      @if(!empty(Auth::user()->avatar_path))
+      <img class="avatar-img" src="{{ asset('storage/' . ltrim(Auth::user()->avatar_path, '/')) }}" alt="Avatar">
+      @else
       <div class="avatar">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</div>
+      @endif
       <span>{{ Auth::user()->name ?? 'Admin Barbekuy' }}</span> <!-- Nama lengkap user, default 'Admin Barbekuy' jika kosong -->
     </div>
 

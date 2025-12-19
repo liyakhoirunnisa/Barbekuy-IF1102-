@@ -130,6 +130,24 @@
             margin-bottom: 12px;
         }
 
+        .profile-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid #751A25;
+            margin: 0 auto 12px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #751A25;
+            background: #fff;
+            user-select: none;
+        }
+
+        .hidden-input {
+            display: none !important;
+        }
+
         .btn-upload {
             background: #751A25;
             color: #fff;
@@ -315,6 +333,25 @@
             border-radius: 8px;
             margin-bottom: 14px;
             font-size: 14px;
+            position: relative;
+            padding-right: 40px;
+        }
+
+        .alert-close {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            border: none;
+            background: transparent;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+        }
+
+        .alert-close:hover {
+            opacity: 1;
         }
 
         .alert-success {
@@ -338,11 +375,15 @@
         <div class="content">
             <div class="container">
                 @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
+                <div class="alert alert-success">
+                    <button type="button" class="alert-close" data-close-alert aria-label="Tutup">&times;</button>
+                    {{ session('success') }}
+                </div>
                 @endif
 
                 @if($errors->any())
                 <div class="alert alert-error">
+                    <button type="button" class="alert-close" data-close-alert aria-label="Tutup">&times;</button>
                     <ul style="margin-left:18px;">
                         @foreach($errors->all() as $e)
                         <li>{{ $e }}</li>
@@ -365,12 +406,24 @@
                                 @csrf
 
                                 <div class="profile-left">
-                                    <img
-                                        src="{{ auth()->user()->avatar_path ? asset('storage/'.auth()->user()->avatar_path) : asset('images/paket ber4 xtra.png') }}"
-                                        alt="Avatar">
+                                    <div id="avatarPreview">
+                                        @if(!empty(auth()->user()->avatar_path))
+                                        <img
+                                            id="avatarImg"
+                                            src="{{ asset('storage/'.ltrim(auth()->user()->avatar_path, '/')) }}"
+                                            alt="Avatar">
+                                        @else
+                                        <div class="profile-icon" id="avatarIcon" aria-label="Profil">
+                                            <i class="fa-regular fa-circle-user" style="font-size:64px;"></i>
+                                        </div>
+                                        @endif
+                                    </div>
                                     <br>
-                                    <button type="button" class="btn-upload">Upload Baru</button>
-                                    <input type="file" id="uploadFoto" name="avatar" accept="image/*" style="display:none;">
+                                    <button type="button" class="btn-upload hidden-input" id="btnUpload" disabled>Upload Baru</button>
+                                    <button type="button" class="btn-save hidden-input" id="btnDeleteAvatar" disabled
+                                        style="background:#ccc;color:#333;">Hapus Avatar</button>
+                                    <input type="file" id="uploadFoto" name="avatar" accept="image/*" style="display:none;" disabled>
+                                    <input type="hidden" name="remove_avatar" id="removeAvatar" value="0">
                                 </div>
 
                                 <div class="profile-right">
@@ -459,21 +512,49 @@
             });
         });
 
-        // Upload avatar preview
-        const btnUpload = document.querySelector(".btn-upload");
+        // Upload & hapus avatar preview
+        const btnUpload = document.getElementById("btnUpload");
+        const btnDeleteAvatar = document.getElementById("btnDeleteAvatar");
         const inputUpload = document.getElementById("uploadFoto");
+        const removeAvatarInput = document.getElementById("removeAvatar");
+        const avatarPreview = document.getElementById("avatarPreview");
+
+        const renderProfileIcon = () => {
+            if (!avatarPreview) return;
+            avatarPreview.innerHTML = `
+                <div class="profile-icon" id="avatarIcon" aria-label="Profil">
+                    <i class="fa-regular fa-circle-user" style="font-size:64px;"></i>
+                </div>
+            `;
+        };
+
+        const ensureAvatarImg = () => {
+            if (!avatarPreview) return null;
+            let img = document.getElementById("avatarImg");
+            if (img) return img;
+            avatarPreview.innerHTML = `<img id="avatarImg" src="" alt="Avatar">`;
+            img = document.getElementById("avatarImg");
+            return img;
+        };
+
         if (btnUpload && inputUpload) {
-            btnUpload.addEventListener("click", () => inputUpload.click());
+            btnUpload.addEventListener("click", () => {
+                if (btnUpload.disabled || inputUpload.disabled) return;
+                inputUpload.click();
+            });
+
             inputUpload.addEventListener("change", (event) => {
                 const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = document.querySelector(".profile-left img");
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
+                if (!file) return;
+
+                if (removeAvatarInput) removeAvatarInput.value = "0";
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = ensureAvatarImg();
+                    if (img) img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
             });
         }
 
@@ -487,21 +568,74 @@
                 "#profile .profile-right input, #profile .profile-right textarea, #profile .profile-right select"
             );
 
-            btnEdit.addEventListener("click", () => {
+            const originalAvatarHtml = avatarPreview ? avatarPreview.innerHTML : null;
+            const originalRemoveAvatar = removeAvatarInput ? removeAvatarInput.value : "0";
+
+            const setEditMode = (isEditing) => {
                 profileFields.forEach(f => {
-                    f.removeAttribute("readonly");
-                    f.removeAttribute("disabled");
+                    if (isEditing) {
+                        f.removeAttribute("readonly");
+                        f.removeAttribute("disabled");
+                    } else {
+                        // kembalikan ke state awal dengan reload pada tombol batal
+                    }
                 });
 
-                btnEdit.style.display = "none";
-                btnSave.style.display = "inline-block";
-                btnCancel.style.display = "inline-block";
+                btnEdit.style.display = isEditing ? "none" : "inline-block";
+                btnSave.style.display = isEditing ? "inline-block" : "none";
+                btnCancel.style.display = isEditing ? "inline-block" : "none";
+
+                if (btnUpload) {
+                    btnUpload.disabled = !isEditing;
+                    btnUpload.classList.toggle("hidden-input", !isEditing);
+                }
+                if (btnDeleteAvatar) {
+                    btnDeleteAvatar.disabled = !isEditing;
+                    btnDeleteAvatar.classList.toggle("hidden-input", !isEditing);
+                }
+                if (inputUpload) {
+                    inputUpload.disabled = !isEditing;
+                }
+            };
+
+            // default: view mode
+            setEditMode(false);
+
+            btnEdit.addEventListener("click", () => {
+                setEditMode(true);
             });
 
             btnCancel.addEventListener("click", () => {
+                // reset avatar preview + flag lalu reload agar field kembali persis seperti semula
+                if (avatarPreview && originalAvatarHtml !== null) {
+                    avatarPreview.innerHTML = originalAvatarHtml;
+                }
+                if (removeAvatarInput) removeAvatarInput.value = originalRemoveAvatar;
+                if (inputUpload) inputUpload.value = "";
                 window.location.reload();
             });
+
+            if (btnDeleteAvatar) {
+                btnDeleteAvatar.addEventListener("click", () => {
+                    if (inputUpload) inputUpload.value = "";
+                    if (removeAvatarInput) removeAvatarInput.value = "1";
+                    renderProfileIcon();
+                });
+            }
+
+            const hasErrors = @json($errors->any());
+            if (hasErrors) {
+                setEditMode(true);
+            }
         }
+
+        // Close alert (notif hijau)
+        document.querySelectorAll('[data-close-alert]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const alertEl = btn.closest('.alert');
+                if (alertEl) alertEl.remove();
+            });
+        });
     </script>
 </body>
 
